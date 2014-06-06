@@ -41,7 +41,7 @@ classdef APS < hgsetget
     
     properties (Constant)
         
-        APS_ROOT = '../../../hardware/APS'; 
+        APS_ROOT = '../../..'; 
 
         NUM_CHANNELS = 4;
 
@@ -80,7 +80,7 @@ classdef APS < hgsetget
             
             % load DLL
             curPath = fileparts(mfilename('fullpath'));
-            obj.library_path = fullfile(curPath, obj.APS_ROOT, 'libaps-cpp');
+            obj.library_path = fullfile(curPath, obj.APS_ROOT);
             obj.load_library();
             
             % build path for bitfiles
@@ -510,11 +510,11 @@ classdef APS < hgsetget
             %Helper functtion to load the platform dependent library
             switch computer()
                 case 'PCWIN64'
-                    libfname = [filesep 'build64' filesep 'libaps64.dll'];
+                    libfname = fullfile('build64', 'libaps64.dll');
                     obj.library_name = 'libaps64';
                     protoFile = @obj.libaps64;
                 case 'PCWIN'
-                    libfname = [filesep 'build32' filesep 'libaps.dll'];
+                    libfname = fullfile('build32', 'libaps.dll');
                     obj.library_name = 'libaps';
                     protoFile = @obj.libaps32;
                 case 'MACI64'
@@ -529,7 +529,7 @@ classdef APS < hgsetget
             
             % build library path and load it if necessary
             if ~libisloaded(obj.library_name)
-                loadlibrary([obj.library_path libfname], protoFile);
+                loadlibrary(fullfile(obj.library_path, libfname), protoFile);
                 %Initialize the APSRack in the library
                 calllib(obj.library_name, 'init');
             end
