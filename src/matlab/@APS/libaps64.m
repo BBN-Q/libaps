@@ -8,7 +8,7 @@ structs=[];enuminfo=[];fcnNum=1;
 fcns=struct('name',ival,'calltype',ival,'LHS',ival,'RHS',ival,'alias',ival,'thunkname', ival);
 MfilePath=fileparts(mfilename('fullpath'));
 import(mfilename('class')); % resolve class name uncertainty by importing the namespace
-ThunkLibName=fullfile(MfilePath,[APS.APS_ROOT '/libaps-cpp/build64/libaps64_thunk_pcwin64']);
+ThunkLibName=fullfile(MfilePath,APS.APS_ROOT, 'build64/libaps64_thunk_pcwin64');
 %  int init (); 
 fcns.thunkname{fcnNum}='int32Thunk';fcns.name{fcnNum}='init'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}=[];fcnNum=fcnNum+1;
 %  int get_numDevices (); 
