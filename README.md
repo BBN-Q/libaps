@@ -5,7 +5,7 @@ This repository provides the C++ (with a C calling API) driver for controlling t
 
 Documentation
 -------------
-Further documtation can be found at ???.
+Further documtation can be found [online](https://libaps.readthedocs.org).
 
 FPGA Bitfiles
 --------------
