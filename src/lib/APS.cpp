@@ -270,9 +270,14 @@ int APS::load_sequence_file(const string & seqFile){
 
 			//Check if there is the linklist data and if it is IQ mode style
 			H5::Group chanGroup = H5SeqFile.openGroup(chanStr);
-			USHORT isLinkListData, isIQMode;
-			isLinkListData = h5element2element<USHORT>("isLinkListData", &chanGroup, H5::PredType::NATIVE_UINT16);
-			isIQMode = h5element2element<USHORT>("isIQMode", &chanGroup, H5::PredType::NATIVE_UINT16);
+			bool isLinkListData;
+			try {
+				chanGroup.openGroup("linkListData");
+				isLinkListData = true;
+			} catch (H5::GroupIException e) {
+				isLinkListData = false;
+			}
+			USHORT isIQMode = h5element2element<USHORT>("isIQMode", &chanGroup, H5::PredType::NATIVE_UINT16);
 			chanGroup.close();
 
 			//Load the linklist data
