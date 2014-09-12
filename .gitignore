@@ -1,3 +1,7 @@
+*.o
+*.dll
+*.dylib
+*.so
 build32/
 build64/
 bitfiles/
