@@ -47,13 +47,13 @@ else
 #CC=cl
 
 ##mingw
-CFLAGS=-Wall -std=c++11 -I'C:\MinGW\msys\1.0\local\include\cpp' -I'C:\MinGW\msys\1.0\local\include'
+CFLAGS=-Wall -std=c++11
 OBJFLAGS=-c
 OBJEXT=o
 LIBEXT=dll
 EXFLAGS=-Wl
 LIBFLAGS=-shared -o libaps.dll 
-LIBS=-L'C:\MinGW\msys\1.0\local\lib'
+LIBS=-L.
 TESTLIBS=-L.
 LFLAGS=
 CC=g++
@@ -65,7 +65,7 @@ ifeq ($(target), 32)
 	TESTLIBS += -laps
 	TESTOBJS = libaps.$(OBJEXT)
 else
-	LIBS += -lftd2xx -lhdf5_cpp -lhdf5
+	LIBS += -lftd2xx64 -lhdf5_cpp -lhdf5
 	LIBFLAGS=-shared -o libaps64.dll
 	TESTLIBS += -laps64
 	TESTOBJS = libaps.$(OBJEXT)
@@ -76,8 +76,8 @@ endif
 
 ifeq ($(mode), debug)
 	CFLAGS += -g
-else
-	CFLAGS += -Os
+# else
+# 	CFLAGS += -Os
 endif
 
 OBJECTS=APSRack.$(OBJEXT) APS.$(OBJEXT) FTDI.$(OBJEXT) Channel.$(OBJEXT) LLBank.$(OBJEXT) FPGA.$(OBJEXT)
