@@ -31,8 +31,8 @@ OBJEXT=o
 LIBEXT=so
 EXFLAGS=-Wl
 LIBFLAGS=-shared -o libaps.so
-LIBS=-lftd2xx -lhdf5 -lhdf5_cpp
-CC=g++-4.7
+LIBS=-lhdf5 -lhdf5_cpp
+CC=g++
 else
 ####### Windows #######
 
