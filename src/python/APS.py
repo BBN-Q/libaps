@@ -196,7 +196,9 @@ class APS (object):
         '''
 
         #Pass through to C
-        self.librarycall('load_sequence_file', str(filename))
+        val = self.librarycall('load_sequence_file', str(filename))
+        if val < 0:
+            raise NameError('Unable to load sequence file {0}. Returned error code: {1}'.format(filename, val))
         
     def load_LL(self, ch, addr, count, trigger1, trigger2, repeat):
         '''
