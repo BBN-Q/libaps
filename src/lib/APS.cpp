@@ -644,7 +644,7 @@ int APS::reset_status_ctrl() {
 
 
 int APS::clear_status_ctrl() {
-	// clears Status/CTRL register. This is the required state to program the VCXO and PLL
+	// clears Status/CTRL register. This is the required state to program the VCXO
 	UCHAR writeByte = 0;
 	return FPGA::write_register(handle_, APS_STATUS_CTRL, 0, INVALID_FPGA, &writeByte);
 }
@@ -671,12 +671,13 @@ int APS::setup_PLL() {
 	const vector<PLLAddrData> PLL_Routine = {
 		{0x0,  0x99},  // Use SDO, Long instruction mode
 		{0x10, 0x7C},  // Enable PLL , set charge pump to 4.8ma
-		{0x11, 0x5},  // Set reference divider R to 5 to divide 125 MHz reference to 25 MHz
-		{0x14, 0x06},  // Set B counter to 6
+		{0x11, 0x5},   // Set reference divider R to 5 to divide 125 MHz reference to 25 MHz
+		{0x14, 0x6},   // Set B counter to 6
 		{0x16, 0x5},   // Set P prescaler to 16 and enable B counter (N = P*B = 96 to divide 2400 MHz to 25 MHz)
-		{0x17, 0x4},   // Selects readback of N divider on STATUS bit in Status/Control register
-		{0x18, 0x60},  // Calibrate VCO with 2 divider, set lock detect count to 255, set high range
+		{0x17, 0xAD},  // Status of VCO frequency; active high on STATUS bit in Status/Control register; antibacklash pulse to 1.3ns
+		{0x18, 0x74},  // Calibrate VCO with 8 divider, set lock detect count to 255, set low range
 		{0x1A, 0x2D},  // Selects readback of PLL Lock status on LOCK bit in Status/Control register
+		{0x1B, 0xA5},  // Enable VCO & REF1 monitors; REFMON pin control set to "Status of selected reference (status of differential reference); active high"
 		{0x1C, 0x7},   // Enable differential reference, enable REF1/REF2 power, disable reference switching
 		{0xF0, 0x00},  // Enable un-inverted 400mv clock on OUT0
 		{0xF1, 0x00},  // Enable un-inverted 400mv clock on OUT1
@@ -691,11 +692,9 @@ int APS::setup_PLL() {
 		{0x197, 0x80}, // Bypass 2 divider
 		{0x1E0, 0x0},  // Set VCO post divide to 2
 		{0x1E1, 0x2},  // Select VCO as clock source for VCO divider
-		{0x232, 0x1},  // Set bit 0 to 1 to simultaneously update all registers with pending writes.
-		{0x18, 0x71},  // Initiate Calibration.  Must be followed by Update Registers Command
-		{0x232, 0x1},  // Set bit 0 to 1 to simultaneously update all registers with pending writes.
-		{0x18, 0x70},  // Clear calibration flag so that next set generates 0 to 1.
-		{0x232, 0x1},  // Set bit 0 to 1 to simultaneously update all registers with pending writes.
+		{0x232, 0x1},  // Set bit 0 to simultaneously update all registers with pending writes.
+		{0x18, 0x75},  // Initiate Calibration.  Must be followed by Update Registers Command
+		{0x232, 0x1}   // Set bit 0 to simultaneously update all registers with pending writes.
 	};
 
 
@@ -703,10 +702,6 @@ int APS::setup_PLL() {
 	for (auto tmpPair : PLL_Routine){
 		FPGA::write_SPI(handle_, APS_PLL_SPI, tmpPair.first, {tmpPair.second});
 	}
-
-	// enable the oscillator
-	if (APS::reset_status_ctrl() != 1)
-		return -1;
 
 	// Enable DDRs
 	FPGA::set_bit(handle_, ALL_FPGAS, FPGA_ADDR_CSR, ddrMask);
@@ -768,25 +763,16 @@ int APS::set_PLL_freq(const FPGASELECT & fpga, const int & freq) {
 	for (int dac = 0; dac < 4; dac++)
 		disable_DAC_FIFO(dac);
 
-	// Disable oscillator by clearing APS_STATUS_CTRL register
-	if (APS::clear_status_ctrl() != 1) return -4;
-
 	//Setup of a vector of address-data pairs for all the writes we need for the PLL routine
 	const vector<PLLAddrData> PLL_Routine = {
 		{pllCyclesAddr, pllCyclesVal},
 		{pllBypassAddr, pllBypassVal},
-		{0x18, 0x71}, // Initiate Calibration.  Must be followed by Update Registers Command
-		{0x232, 0x1}, // Set bit 0 to 1 to simultaneously update all registers with pending writes.
-		{0x18, 0x70}, // Clear calibration flag so that next set generates 0 to 1.
-		{0x232, 0x1} // Set bit 0 to 1 to simultaneously update all registers with pending writes.
+		{0x232, 0x1} // Update registers
 	};
 	// Go through the routine
 	for (auto tmpPair : PLL_Routine){
 		FPGA::write_SPI(handle_, APS_PLL_SPI, tmpPair.first, {tmpPair.second});
 	}
-
-	// Enable Oscillator
-	if (APS::reset_status_ctrl() != 1) return -4;
 
 	// Enable DDRs
 	FPGA::set_bit(handle_, fpga, FPGA_ADDR_CSR, ddr_mask);
@@ -1140,6 +1126,10 @@ int APS::setup_VCXO() {
 	FPGA::write_SPI(handle_, APS_VCXO_SPI, 0, Reg00Bytes);
 	FPGA::write_SPI(handle_, APS_VCXO_SPI, 0, Reg01Bytes);
 
+	// enable the oscillator
+	if (APS::reset_status_ctrl() != 1)
+		return -2;
+
 	return 0;
 }
 
@@ -1152,19 +1142,24 @@ int APS::setup_DAC(const int & dac) const
 	BYTE data;
 	BYTE SD, MSD, MHD;
 	BYTE edgeMSD, edgeMHD;
-	ULONG interruptAddr, controllerAddr, sdAddr, msdMhdAddr;
+	ULONG interruptAddr, controllerAddr, controllerClockAddr, sdAddr, msdMhdAddr;
 
 	// For DAC SPI writes, we put DAC select in bits 6:5 of address
-	interruptAddr = 0x1 | (dac << 5);
-	controllerAddr = 0x6 | (dac << 5);
-	sdAddr = 0x5 | (dac << 5);
-	msdMhdAddr = 0x4 | (dac << 5);
+	interruptAddr       = 0x1 | (dac << 5);
+	controllerAddr      = 0x6 | (dac << 5);
+	controllerClockAddr = 0x16 | (dac << 5);
+	sdAddr              = 0x5 | (dac << 5);
+	msdMhdAddr          = 0x4 | (dac << 5);
 
 	if (dac < 0 || dac > 3) {
 		FILE_LOG(logERROR) << "FPGA::setup_DAC: unknown DAC, " << dac;
 		return -1;
 	}
 	FILE_LOG(logINFO) << "Setting up DAC " << dac;
+
+	// Step 0: write control clock divider register to 5 (divide by 128)
+	data = 5;
+	FPGA::write_SPI(handle_, APS_DAC_SPI, controllerClockAddr, {data});
 
 	// Step 1: calibrate and set the LVDS controller.
 	// Ensure that surveilance and auto modes are off
