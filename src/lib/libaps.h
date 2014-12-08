@@ -79,6 +79,8 @@ EXPORT int get_running(int);
 EXPORT int set_log(char *);
 EXPORT int set_logging_level(int);
 
+EXPORT int read_PLL_chip_status(int);
+
 /* more debug methods */
 EXPORT int save_state_files();
 EXPORT int read_state_files();

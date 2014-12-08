@@ -279,6 +279,10 @@ float APSRack::get_channel_scale(const int & deviceID, const int & channelNum) c
 	return APSs_[deviceID].get_channel_scale(channelNum);
 }
 
+int APSRack::read_PLL_chip_status(const int & deviceID) const {
+	return APSs_[deviceID].read_PLL_chip_status();
+}
+
 int APSRack::save_state_files(){
 	// loop through available APS Units and save state
 	for(unsigned int apsct = 0; apsct < APSs_.size(); apsct++) {

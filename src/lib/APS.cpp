@@ -1060,6 +1060,12 @@ int APS::read_PLL_status(const FPGASELECT & fpga, const int & regAddr /*check he
 	return pllStatus;
 }
 
+int APS::read_PLL_chip_status() const {
+	UCHAR status;
+	FPGA::read_SPI(handle_, APS_PLL_SPI, 0x1F, &status);
+	return status;
+}
+
 int APS::get_PLL_freq(const FPGASELECT & fpga) const {
 	// Poll APS PLL chip to determine current frequency
 

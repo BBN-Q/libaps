@@ -207,6 +207,10 @@ int set_repeat_mode(int deviceID, int channelNum, int mode) {
 	return APSRack_.set_repeat_mode(deviceID, channelNum, mode);
 }
 
+int read_PLL_chip_status(int deviceID) {
+	return APSRack_.read_PLL_chip_status(deviceID);
+}
+
 int save_state_files() {
 	return APSRack_.save_state_files();
 }

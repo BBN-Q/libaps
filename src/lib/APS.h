@@ -72,6 +72,8 @@ public:
 	int run();
 	int stop();
 
+	int read_PLL_chip_status() const;
+
 	//The owning APSRack needs access to some private members
 	friend class APSRack;
 	friend class BankBouncerThread;

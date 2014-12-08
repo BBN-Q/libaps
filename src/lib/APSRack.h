@@ -76,6 +76,8 @@ public:
 
 	int load_sequence_file(const int &, const string &);
 
+	int read_PLL_chip_status(const int &) const;
+
 	int save_state_files();
 	int read_state_files();
 	int save_bulk_state_file(string & );

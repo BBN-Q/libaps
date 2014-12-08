@@ -97,5 +97,7 @@ fcns.thunkname{fcnNum}='int32int32int32int32Thunk';fcns.name{fcnNum}='read_regis
 fcns.thunkname{fcnNum}='int32int32Thunk';fcns.name{fcnNum}='read_status_ctrl'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'int32'};fcnNum=fcnNum+1;
 %  int program_FPGA ( int , char *, int , int ); 
 fcns.thunkname{fcnNum}='int32int32cstringint32int32Thunk';fcns.name{fcnNum}='program_FPGA'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'int32', 'cstring', 'int32', 'int32'};fcnNum=fcnNum+1;
+%  int read_PLL_chip_status( int )
+fcns.thunkname{fcnNum}='int32int32Thunk';fcns.name{fcnNum}='read_PLL_chip_status'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'int32'};fcnNum=fcnNum+1;
 enuminfo.APSErrorCode=struct('APS_OK',0,'APS_UNKNOWN_ERROR',-1,'APS_FILE_ERROR',-2);
 methodinfo=fcns;
