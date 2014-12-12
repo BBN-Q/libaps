@@ -54,6 +54,9 @@ ADD_EXECUTABLE(test
 )
 TARGET_LINK_LIBRARIES(test aps)
 
+ADD_EXECUTABLE(debug_oscillator	./lib/debug_oscillator.cpp )
+TARGET_LINK_LIBRARIES(debug_oscillator aps)
+
 if(WIN32)
 FIND_LIBRARY(FTDI_LIBRARY ftd2xx64 "../ftdi/")
 TARGET_LINK_LIBRARIES(aps hdf5 hdf5_cpp ${FTDI_LIBRARY})

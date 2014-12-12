@@ -366,3 +366,7 @@ int APSRack::raw_read(int deviceID, FPGASELECT fpga) {
 int APSRack::read_register(int deviceID, FPGASELECT fpga, int addr){
 	return FPGA::read_FPGA(APSs_[deviceID].handle_, addr, fpga);
 }
+
+int APSRack::enable_oscillator(int deviceID) {
+	return APSs_[deviceID].reset_status_ctrl();
+}

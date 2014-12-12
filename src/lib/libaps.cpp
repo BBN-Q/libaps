@@ -244,6 +244,10 @@ int read_status_ctrl(int deviceID){
 	return APSRack_.read_status_control(deviceID);
 }
 
+int enable_oscillator(int deviceID) {
+	return APSRack_.enable_oscillator(deviceID);
+}
+
 int program_FPGA(int deviceID, char* bitFile, int chipSelect, int expectedVersion) {
 	return APSRack_.program_FPGA(deviceID, string(bitFile), FPGASELECT(chipSelect), expectedVersion);
 }

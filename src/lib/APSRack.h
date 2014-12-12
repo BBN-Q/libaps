@@ -83,9 +83,11 @@ public:
 	int save_bulk_state_file(string & );
 	int read_bulk_state_file(string & );
 
+	// low-level debug methods
 	int raw_write(int, int, UCHAR*);
 	int raw_read(int, FPGASELECT);
 	int read_register(int, FPGASELECT, int);
+	int enable_oscillator(int);
 
 private:
 	APSRack(const APSRack&) = delete;

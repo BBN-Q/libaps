@@ -654,7 +654,7 @@ int APS::clear_status_ctrl() {
 }
 
 UCHAR APS::read_status_ctrl() const {
-	UCHAR readByte = 0xAA;
+	UCHAR readByte = 0xFF;
 	FPGA::read_register(handle_, APS_STATUS_CTRL, 0, INVALID_FPGA, &readByte);
 	return readByte;
 }
