@@ -82,6 +82,10 @@ int APS::init(const string & bitFile, const bool & forceReload){
 	if (forceReload || read_bitFile_version(ALL_FPGAS) != FIRMWARE_VERSION || !read_PLL_status(ALL_FPGAS)) {
 		FILE_LOG(logINFO) << "Resetting instrument";
 		FILE_LOG(logINFO) << "Found force: " << forceReload << " bitFile version: " << myhex << read_bitFile_version(ALL_FPGAS) << " PLL status: " << read_PLL_status(ALL_FPGAS);
+
+		// clear status/control register
+		clear_status_ctrl();
+
 		//Setup the oscillators
 		setup_VCXO();
 		setup_PLL();
@@ -655,16 +659,25 @@ UCHAR APS::read_status_ctrl() const {
 	return readByte;
 }
 
+int APS::enable_oscillator() {
+	UCHAR mask = APS_OSCEN_BIT;
+	UCHAR status = 0;
+	FPGA::read_register(handle_, APS_STATUS_CTRL, 0, INVALID_FPGA, &status);
+	status |= mask;
+	return FPGA::write_register(handle_, APS_STATUS_CTRL, 0, INVALID_FPGA, &status);
+}
+
+int APS::disable_oscillator() {
+	UCHAR mask = APS_OSCEN_BIT;
+	UCHAR status = 0;
+	FPGA::read_register(handle_, APS_STATUS_CTRL, 0, INVALID_FPGA, &status);
+	status &= ~mask;
+	return FPGA::write_register(handle_, APS_STATUS_CTRL, 0, INVALID_FPGA, &status);
+}
+
 int APS::setup_PLL() {
 	// set the on-board PLL to its default state (two 1.2 GHz outputs, and one 300 MHz output)
 	FILE_LOG(logINFO) << "Setting up PLL";
-
-	// Disable DDRs
-	int ddrMask = CSRMSK_CHA_DDR | CSRMSK_CHB_DDR;
-	FPGA::clear_bit(handle_, ALL_FPGAS, FPGA_ADDR_CSR, ddrMask);
-	// disable dac FIFOs
-	for (int dac = 0; dac < 4; dac++)
-		disable_DAC_FIFO(dac);
 
 	// Setup modified for 300 MHz FPGA clock rate
 	//Setup of a vector of address-data pairs for all the writes we need for the PLL routine
@@ -702,9 +715,6 @@ int APS::setup_PLL() {
 	for (auto tmpPair : PLL_Routine){
 		FPGA::write_SPI(handle_, APS_PLL_SPI, tmpPair.first, {tmpPair.second});
 	}
-
-	// Enable DDRs
-	FPGA::set_bit(handle_, ALL_FPGAS, FPGA_ADDR_CSR, ddrMask);
 
 	//Record that sampling rate has been set to 1200
 	samplingRate_ = 1200;
@@ -835,12 +845,12 @@ int APS::test_PLL_sync(const FPGASELECT & fpga, const int & numRetries /* see he
 		return -1;
 	}
 
-	// Disable DDRs
-	int ddr_mask = CSRMSK_CHA_DDR | CSRMSK_CHB_DDR;
-	FPGA::clear_bit(handle_, fpga, FPGA_ADDR_CSR, ddr_mask);
 	// disable DAC FIFOs
 	for (int dac = 0; dac < 4; dac++)
 		disable_DAC_FIFO(dac);
+	// Disable DDRs
+	int ddr_mask = CSRMSK_CHA_DDR | CSRMSK_CHB_DDR;
+	FPGA::clear_bit(handle_, fpga, FPGA_ADDR_CSR, ddr_mask);
 
 	//A little helper function to wait for the PLL's to lock and reset if necessary
 	auto wait_PLL_relock = [this, &fpga, &pllResetBit](bool resetPLL, const int & regAddress, const vector<int> & pllBits) -> bool {
@@ -1126,14 +1136,14 @@ int APS::setup_VCXO() {
 	vector<UCHAR> Reg01Bytes = {0x64, 0x91, 0x0, 0x61};
 
 	// ensure the oscillator is disabled before programming
-	if (APS::clear_status_ctrl() != 1)
+	if (disable_oscillator() != 1)
 		return -1;
 
 	FPGA::write_SPI(handle_, APS_VCXO_SPI, 0, Reg00Bytes);
 	FPGA::write_SPI(handle_, APS_VCXO_SPI, 0, Reg01Bytes);
 
 	// enable the oscillator
-	if (APS::reset_status_ctrl() != 1)
+	if (enable_oscillator() != 1)
 		return -2;
 
 	return 0;
@@ -1166,6 +1176,8 @@ int APS::setup_DAC(const int & dac) const
 	// Step 0: write control clock divider register to 5 (divide by 128)
 	data = 5;
 	FPGA::write_SPI(handle_, APS_DAC_SPI, controllerClockAddr, {data});
+
+	disable_DAC_FIFO(dac);
 
 	// Step 1: calibrate and set the LVDS controller.
 	// Ensure that surveilance and auto modes are off
@@ -1241,7 +1253,7 @@ int APS::setup_DAC(const int & dac) const
 	*/
 	
 	// turn on SYNC FIFO
-//	enable_DAC_FIFO(dac);
+	// enable_DAC_FIFO(dac);
 
 	return 0;
 }

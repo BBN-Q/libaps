@@ -41,7 +41,15 @@ static const int APS_INIT01_BIT = 0x40;
 static const int APS_INIT23_BIT = 0x80;
 static const int APS_INIT_BITS = (APS_INIT01_BIT | APS_INIT23_BIT);
 
-static const int APS_OSCEN_BIT = 0x10;
+//Status/Control register
+static const int APS_DIRQ_BIT   = 0x80;
+static const int APS_LOCK_BIT   = 0x40;
+static const int APS_STATUS_BIT = 0x20;
+static const int APS_OSCEN_BIT  = 0x10;
+static const int APS_DRST23_BIT = 0x08;
+static const int APS_DRST01_BIT = 0x04;
+static const int APS_PRST_BIT   = 0x02;
+static const int APS_SYNC_BIT   = 0x01;
 
 
 //Command byte bits
