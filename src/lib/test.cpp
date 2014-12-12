@@ -55,7 +55,7 @@ void test::streaming() {
 	set_channel_enabled(0, 0, 1);
 	set_run_mode(0, 0, 1);
 	run(0);
-	Sleep(10000);
+	usleep(10000000);
 	stop(0);
 }
 
@@ -289,7 +289,7 @@ int main(int argc, char** argv) {
 //	set_waveform_float(0, 0, &waveform.front(), waveform.size());
 //	set_run_mode(0, 0, 0);
 //	run(0);
-//	Sleep(1);
+//	usleep(1000);
 //	stop(0);
 
 	// select test to run
