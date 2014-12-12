@@ -510,11 +510,11 @@ classdef APS < hgsetget
             %Helper functtion to load the platform dependent library
             switch computer()
                 case 'PCWIN64'
-                    libfname = fullfile('build64', 'libaps64.dll');
-                    obj.library_name = 'libaps64';
+                    libfname = fullfile('build', 'libaps.dll');
+                    obj.library_name = 'libaps';
                     protoFile = @obj.libaps64;
                 case 'PCWIN'
-                    libfname = fullfile('build32', 'libaps.dll');
+                    libfname = fullfile('build', 'libaps.dll');
                     obj.library_name = 'libaps';
                     protoFile = @obj.libaps32;
                 case 'MACI64'
