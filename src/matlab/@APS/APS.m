@@ -22,7 +22,7 @@ classdef APS < hgsetget
     
     properties
         library_path; %path to the shared library 
-        library_name; %name of the dll
+        library_name = 'libaps'; %name of the dll
         deviceID; %FTDI device ID
         deviceSerial; %FTDI device serial number for identification
 
@@ -80,7 +80,7 @@ classdef APS < hgsetget
             
             % load DLL
             curPath = fileparts(mfilename('fullpath'));
-            obj.library_path = fullfile(curPath, obj.APS_ROOT);
+            obj.library_path = fullfile(curPath, obj.APS_ROOT, 'build');
             obj.load_library();
             
             % build path for bitfiles
@@ -510,13 +510,8 @@ classdef APS < hgsetget
             %Helper functtion to load the platform dependent library
             switch computer()
                 case 'PCWIN64'
-                    libfname = fullfile('build', 'libaps.dll');
-                    obj.library_name = 'libaps';
-                    protoFile = @obj.libaps64;
-                case 'PCWIN'
-                    libfname = fullfile('build', 'libaps.dll');
-                    obj.library_name = 'libaps';
-                    protoFile = @obj.libaps32;
+                    libfname = 'libaps.dll';
+                    protoFile = @obj.libaps;
                 case 'MACI64'
                     libfname = 'libaps.dylib';
                     error('Need prototype file setup for OS X');
@@ -528,10 +523,10 @@ classdef APS < hgsetget
             end
             
             % build library path and load it if necessary
-            if ~libisloaded(obj.library_name)
+            if ~libisloaded('libaps')
                 loadlibrary(fullfile(obj.library_path, libfname), protoFile);
                 %Initialize the APSRack in the library
-                calllib(obj.library_name, 'init');
+                calllib('libaps', 'init');
             end
         end
         
@@ -621,8 +616,7 @@ classdef APS < hgsetget
         sequence = LinkListSequences(sequence)
         
         %Reference prototype file for fast loading of shared library
-        [methodinfo,structs,enuminfo,ThunkLibName]=libaps64
-        [methodinfo,structs,enuminfo,ThunkLibName]=libaps32
+        [methodinfo,structs,enuminfo,ThunkLibName]=libaps
         
             
         function UnitTest(forceLoad)
