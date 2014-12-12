@@ -37,6 +37,8 @@ int write_block(FT_HANDLE, vector<UCHAR> &, const vector<size_t> &);
 vector<UCHAR> format(const FPGASELECT &, const unsigned int &, const WordVec &);
 vector<size_t> computeCmdByteOffsets(const size_t &);
 
+int check_cur_state(FT_HANDLE, const FPGASELECT &, const int &);
+
 } //end namespace FPGA
 
 

@@ -209,21 +209,20 @@ int FPGA::read_register(
 	const int max_repeats = 5;
 
 	//Figure out how many bytes we're sending
-	switch(Command)
-	{
-	case APS_FPGA_IO:
-		FILE_LOG(logERROR) << "FPGA::read_register can no longer be used with APS_FPGA_IO commands.";
-		return -1;
-	case APS_FPGA_ADDR:
-		FILE_LOG(logERROR) << "FPGA::read_register can no longer be used with APS_FPGA_ADDR commands.";
-		return -1;
-	case APS_CONF_STAT:
-	case APS_STATUS_CTRL:
-		packetLength = 1;
-		break;
-	default:
-		// Illegal command type
-		return(-1);
+	switch (Command) {
+		case APS_FPGA_IO:
+			FILE_LOG(logERROR) << "FPGA::read_register can no longer be used with APS_FPGA_IO commands.";
+			return -1;
+		case APS_FPGA_ADDR:
+			FILE_LOG(logERROR) << "FPGA::read_register can no longer be used with APS_FPGA_ADDR commands.";
+			return -1;
+		case APS_CONF_STAT:
+		case APS_STATUS_CTRL:
+			packetLength = 1;
+			break;
+		default:
+			// Illegal command type
+			return -1;
 	}
 	// Start all packets with a APS Command Byte with the R/W = 1 for read
 	commandPacket = 0x80 | Command | (chipSelect<<2) | transferSize;
@@ -235,7 +234,7 @@ int FPGA::read_register(
 		if (repeats > 0) {FILE_LOG(logDEBUG2) << "Retry USB Write " << repeats;}
 		ftStatus = FT_Write(deviceHandle, &commandPacket, 1, &bytesWritten);
 
-		if (!FT_SUCCESS(ftStatus) || bytesWritten != 1){
+		if (!FT_SUCCESS(ftStatus) || bytesWritten != 1) {
 			FILE_LOG(logDEBUG2) << "FPGA::read_register: Error writing to USB with status = " << ftStatus << "; bytes written = " << bytesWritten << "; repeat count = " << repeats;
 			continue;
 		}
@@ -245,19 +244,19 @@ int FPGA::read_register(
 		//Read the result
 		ftStatus = FT_Read(deviceHandle, Data, packetLength, &bytesRead);
 		if (repeats > 0) {FILE_LOG(logDEBUG2) << "Retry USB Read " << repeats;}
-		if (!FT_SUCCESS(ftStatus) || bytesRead != packetLength){
+		if (!FT_SUCCESS(ftStatus) || bytesRead != packetLength) {
 			FILE_LOG(logDEBUG2) << "FPGA::read_register: Error reading from USB with status = " << ftStatus << "; bytes read = " << bytesRead << "; repeat count = " << repeats;
 		}
 		else{
 			break;
 		}
 	}
-	if (!FT_SUCCESS(ftStatus) || bytesRead != packetLength){
+	if (!FT_SUCCESS(ftStatus) || bytesRead != packetLength) {
 		FILE_LOG(logERROR) << "FPGA::read_register: Error reading to USB with status = " << ftStatus << "; bytes read = " << bytesRead;
 		return -1;
 	}
 
-	return(bytesRead);
+	return bytesRead;
 }
 
 
@@ -718,29 +717,19 @@ int FPGA::clear_bit(FT_HANDLE deviceHandle, const FPGASELECT & fpga, const int &
 	FILE_LOG(logDEBUG2) << "Clearing bit at address: " << myhex << addr;
 
 	//Read the current state so we know how set the uncleared bits.
-	int currentState, currentState2;
-	//Use a lambda because we'll need the same call below
-	auto check_cur_state = [&] () {
-		if (fpga != ALL_FPGAS) {
-			currentState = FPGA::read_FPGA(deviceHandle, addr, fpga);
-		} else{ // read the two FPGAs serially
-			currentState = FPGA::read_FPGA(deviceHandle, addr, FPGA1);
-			currentState2 = FPGA::read_FPGA(deviceHandle, addr, FPGA2);
-			if (currentState != currentState2) {
-				// note the mismatch in the log file but continue on using FPGA1's data
-				FILE_LOG(logERROR) << "FPGA::clear_bit: FPGA registers don't match. Addr: " << myhex << addr << " FPGA1: " << currentState << " FPGA2: " << currentState2;
-			}
-		}
-	};
+	int currentState;
 
-	check_cur_state();
+	currentState = FPGA::check_cur_state(deviceHandle, fpga, addr);
 	FILE_LOG(logDEBUG2) << "Addr: " << myhex << addr << " Current State: " << currentState << " Writing: " << (currentState & ~mask);
 
 	FPGA::write_FPGA(deviceHandle, addr, currentState & ~mask, fpga);
 
 	if (FILELog::ReportingLevel() >= logDEBUG2) {
 		// verify write
-		check_cur_state();
+		currentState = FPGA::check_cur_state(deviceHandle, fpga, addr);
+		if ((currentState & mask) != 0) {
+			FILE_LOG(logERROR) << "ERROR: FPGA::clear_bit checked data does not match set value";
+		}
 	}
 
 	return 0;
@@ -756,29 +745,16 @@ int FPGA::set_bit(FT_HANDLE deviceHandle, const FPGASELECT & fpga, const int & a
 {
 
 	//Read the current state so we know how set the unset bits.
-	int currentState, currentState2;
-	//Use a lambda because we'll need the same call below
-	auto check_cur_state = [&] () {
-		if (fpga != ALL_FPGAS) {
-			currentState = FPGA::read_FPGA(deviceHandle, addr, fpga);
-		} else{ // read the two FPGAs serially
-			currentState = FPGA::read_FPGA(deviceHandle, addr, FPGA1);
-			currentState2 = FPGA::read_FPGA(deviceHandle, addr, FPGA2);
-			if (currentState != currentState2) {
-				// note the mismatch in the log file but continue on using FPGA1's data
-				FILE_LOG(logERROR) << "FPGA::set_bit: FPGA registers don't match. Addr: " << myhex << addr << " FPGA1: " << currentState << " FPGA2: " << currentState2;
-			}
-		}
-	};
+	int currentState;
 
-	check_cur_state();
+	currentState = FPGA::check_cur_state(deviceHandle, fpga, addr);
 	FILE_LOG(logDEBUG2) << "Addr: " <<  myhex << addr << " Current State: " << currentState << " Mask: " << mask << " Writing: " << (currentState | mask);
 
 	FPGA::write_FPGA(deviceHandle, addr, currentState | mask, fpga);
 
 	if (FILELog::ReportingLevel() >= logDEBUG2) {
 		// verify write
-		check_cur_state();
+		currentState = FPGA::check_cur_state(deviceHandle, fpga, addr);
 		if ((currentState & mask) == 0) {
 			FILE_LOG(logERROR) << "ERROR: FPGA::set_bit checked data does not match set value";
 		}
@@ -788,5 +764,18 @@ int FPGA::set_bit(FT_HANDLE deviceHandle, const FPGASELECT & fpga, const int & a
 
 }
 
-
+int FPGA::check_cur_state(FT_HANDLE deviceHandle, const FPGASELECT & fpga, const int & addr) {
+	int currentState, currentState2;
+	if (fpga != ALL_FPGAS) {
+		currentState = FPGA::read_FPGA(deviceHandle, addr, fpga);
+	} else{ // read the two FPGAs serially
+		currentState = FPGA::read_FPGA(deviceHandle, addr, FPGA1);
+		currentState2 = FPGA::read_FPGA(deviceHandle, addr, FPGA2);
+		if (currentState != currentState2) {
+			// note the mismatch in the log file but continue on using FPGA1's data
+			FILE_LOG(logERROR) << "FPGA::check_cur_state: FPGA registers don't match. Addr: " << myhex << addr << " FPGA1: " << currentState << " FPGA2: " << currentState2;
+		}
+	}
+	return currentState;
+}
 
