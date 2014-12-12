@@ -22,6 +22,7 @@ INCLUDE_DIRECTORIES( ${HDF5_INCLUDE_DIR}/cpp )
 
 #Grab all the header files in the src directory
 INCLUDE_DIRECTORIES("./lib/")
+INCLUDE_DIRECTORIES("../ftdi/")
 
 #Add flags for gcc and C++11
 ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-DGCC")
@@ -53,4 +54,9 @@ ADD_EXECUTABLE(test
 )
 TARGET_LINK_LIBRARIES(test aps)
 
+if(WIN32)
+FIND_LIBRARY(FTDI_LIBRARY ftd2xx64 "../ftdi/")
+TARGET_LINK_LIBRARIES(aps hdf5 hdf5_cpp ${FTDI_LIBRARY})
+else(WIN32)
 TARGET_LINK_LIBRARIES(aps hdf5 hdf5_cpp ftd2xx)
+endif(WIN32)
