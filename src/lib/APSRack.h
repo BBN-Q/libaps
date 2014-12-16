@@ -88,6 +88,7 @@ public:
 	int raw_read(int, FPGASELECT);
 	int read_register(int, FPGASELECT, int);
 	int enable_oscillator(int);
+	int disable_oscillator(int);
 
 private:
 	APSRack(const APSRack&) = delete;

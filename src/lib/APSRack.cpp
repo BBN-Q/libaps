@@ -370,3 +370,7 @@ int APSRack::read_register(int deviceID, FPGASELECT fpga, int addr){
 int APSRack::enable_oscillator(int deviceID) {
 	return APSs_[deviceID].reset_status_ctrl();
 }
+
+int APSRack::disable_oscillator(int deviceID) {
+	return APSs_[deviceID].disable_oscillator();
+}

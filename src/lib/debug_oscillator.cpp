@@ -22,13 +22,19 @@ void enableVCXO(int id) {
 	enable_oscillator(id);
 }
 
+void disableVCXO(int id) {
+	cout << "Disabling VCXO" << endl;
+	disable_oscillator(id);
+}
+
 void printHelp(){
 	string spacing = "   ";
 	cout << "Usage: debug_oscillator serial <options>" << endl;
 	cout << "Where <options> can be any of the following:" << endl;
-	cout << spacing << "-s  read status/control register" << endl;
-	cout << spacing << "-vcxo  enable vcxo" << endl;
-	cout << spacing << "-h  Print This Help Message" << endl;
+	cout << spacing << "-s       read status/control register" << endl;
+	cout << spacing << "-vcxo    enable vcxo" << endl;
+	cout << spacing << "-novcxo  disable vcxo" << endl;
+	cout << spacing << "-h       Print This Help Message" << endl;
 }
 
 // command options functions taken from:
@@ -74,7 +80,11 @@ int main(int argc, char** argv) {
 	set_log(s);
 
 	//Connect to device
-	connect_by_ID(device_id);
+	err = connect_by_ID(device_id);
+	if (err != APS_OK) {
+		cout << "Error connecting to device." << endl;
+		exit(-1);
+	}
 
 	// string bitFile = "../../bitfiles/mqco_aps_latest";
 	// err = initAPS(device_id, const_cast<char*>(bitFile.c_str()), true);

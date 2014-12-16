@@ -248,6 +248,10 @@ int enable_oscillator(int deviceID) {
 	return APSRack_.enable_oscillator(deviceID);
 }
 
+int disable_oscillator(int deviceID) {
+	return APSRack_.disable_oscillator(deviceID);
+}
+
 int program_FPGA(int deviceID, char* bitFile, int chipSelect, int expectedVersion) {
 	return APSRack_.program_FPGA(deviceID, string(bitFile), FPGASELECT(chipSelect), expectedVersion);
 }

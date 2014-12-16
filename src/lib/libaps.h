@@ -79,9 +79,7 @@ EXPORT int get_running(int);
 EXPORT int set_log(char *);
 EXPORT int set_logging_level(int);
 
-EXPORT int read_PLL_chip_status(int);
-
-/* more debug methods */
+/* low-level debug methods */
 EXPORT int save_state_files();
 EXPORT int read_state_files();
 EXPORT int save_bulk_state_file();
@@ -91,7 +89,9 @@ EXPORT int raw_write(int, int, unsigned char*);
 EXPORT int raw_read(int, int);
 EXPORT int read_register(int, int, int);
 EXPORT int read_status_ctrl(int);
+EXPORT int read_PLL_chip_status(int);
 EXPORT int enable_oscillator(int);
+EXPORT int disable_oscillator(int);
 
 EXPORT int program_FPGA(int, char*, int, int);
 
