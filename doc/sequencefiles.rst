@@ -1,5 +1,69 @@
-Sequence File Specification
-============================
+.. _sec-sequence-files:
+
+Sequence Mode and File Specification
+====================================
+
+In addition to outputting waveforms of up to 32,768 points, the APS
+supports a sequence mode that outputs a series of pulses from the
+waveform memory. This sequence definition table, known as a ‘link list’,
+can store up to 8,192 entries. The APS’s dual-port memory architecture
+allows the driver software to stream data to the sequence memory while
+the device is running. If configured such that an individual sequence
+duration is longer than the transfer time (:math:`\sim 10\,\mathrm{ms}`
+per channel), then the APS can output a nearly continuous stream of
+pulses. Use of this streaming mode of operation is largely transparent
+to the user. One simply asks to load some sequence data to the APS, and
+if there are more entries than can fit onto the device memory, the
+driver will use streaming mode automatically.
+
+The APS sequence mode requires the construction of a set of one or more
+link lists. The APS begins output of each link list upon receipt of a
+trigger, which can be supplied at the external trigger input of the
+analog module, or it can be generated internally. Each link list is
+composed of one or more entries, which can be any of the following
+types:
+
+-  **waveform** - an analog pulse defined by a section of waveform
+   memory
+
+-  **time/amplitude pair** - a constant amplitude signal of a specified
+   duration
+
+-  **delay** - a time/amplitude pair with amplitude zero
+
+Each entry may also specify a transition in the output of the associated
+digital (marker) channel. In particular, one can specify the position of
+a rising edge, falling edge, or pulse at a delay from the beginning of
+the output of the entry.
+
+The APS firmware allows for an additional division of each link list
+into sub-sequences known as ‘mini link lists’. This allows the user to
+specify sequences with repeated sections, or sections which should wait
+for a trigger to output. One use of this feature is to specify sets of
+experiments which scan over some parameter such as a delay or a pulse
+height, and take the data in a ‘round robin’ mode, as supported by many
+digitizers.
+
+Figure :ref:`fig-pulse-sequence` shows an example of a Hahn echo experiment
+(:math:`\pi/2`-pulse, wait :math:`\tau`, :math:`\pi`-pulse, wait
+:math:`\tau`, :math:`\pi/2`-pulse) specified as a link list. The
+waveform memory (right panel) contains just two pulses, corresponding to
+the :math:`\pi/2` and :math:`\pi` pulses. Then the link list (bottom)
+joins these pulses together with appropriate delays.
+
+.. _fig-pulse-sequence:
+.. figure::
+  images/pulse-sequence.png
+  :scale: 100%
+  :align: center
+
+  **Example pulse sequence:** A simple pulse sequence that might occur in a Hahn
+  echo experiment as implemented using a link list. Note that one can test
+  very long delays because the data stored in waveform memory is independent
+  of the experiment delays.
+
+File Specification
+-------------------
 
 Sequences are programmed using an HDF5 file with the following layout (n is an integer between 1-4):
 
