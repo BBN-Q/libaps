@@ -288,7 +288,8 @@ int APS::load_sequence_file(const string & seqFile){
 			if (isLinkListData){
 				if (isIQMode){
 					channels_[chanct].LLBank_.IQMode = true;
-					channels_[chanct].LLBank_.read_state_from_hdf5(H5SeqFile, chanStrs[chanct]+"/linkListData");
+					int status = channels_[chanct].LLBank_.read_state_from_hdf5(H5SeqFile, chanStrs[chanct]+"/linkListData");
+					if (status != 0) return status;
 					//If the length is less than can fit on the chip then write it to the device
 					if (channels_[chanct].LLBank_.length < MAX_LL_LENGTH){
 						write_LL_data_IQ(dac2fpga(chanct), 0, 0, channels_[chanct].LLBank_.length, true );

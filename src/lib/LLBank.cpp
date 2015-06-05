@@ -71,19 +71,33 @@ int LLBank::write_state_to_hdf5(H5::H5File & H5StateFile, const string & rootStr
 }
 
 int LLBank::read_state_from_hdf5(H5::H5File & H5StateFile, const string & rootStr){
-	H5::Group chanGroup = H5StateFile.openGroup(rootStr);
+	H5::Group chanGroup;
+	try {
+		chanGroup = H5StateFile.openGroup(rootStr);
+	} catch (H5::FileIException & e) {
+		return -2;
+	}
 	H5::DataType dt = H5::PredType::NATIVE_UINT16;
 	length = h5element2element<USHORT>("length", &chanGroup, dt);
 	chanGroup.close();
-	addr_  = h5array2vector<USHORT>(&H5StateFile, rootStr + "/addr",  dt);
-	count_   = h5array2vector<USHORT>(&H5StateFile, rootStr + "/count",   dt);
-	trigger1_ = h5array2vector<USHORT>(&H5StateFile, rootStr + "/trigger1", dt);
-	repeat_  = h5array2vector<USHORT>(&H5StateFile, rootStr + "/repeat",  dt);
-	if(IQMode){
-		trigger2_ = h5array2vector<USHORT>(&H5StateFile, rootStr + "/trigger2", dt);
+	try {
+		addr_  = h5array2vector<USHORT>(&H5StateFile, rootStr + "/addr",  dt);
+		count_   = h5array2vector<USHORT>(&H5StateFile, rootStr + "/count",   dt);
+		trigger1_ = h5array2vector<USHORT>(&H5StateFile, rootStr + "/trigger1", dt);
+		repeat_  = h5array2vector<USHORT>(&H5StateFile, rootStr + "/repeat",  dt);
+		if(IQMode){
+			trigger2_ = h5array2vector<USHORT>(&H5StateFile, rootStr + "/trigger2", dt);
+		}
+	} catch (std::exception & e) {
+		return -3;
 	}
 
-	init_data();
+	try {
+		init_data();
+	} catch (std::exception & e) {
+		return -4;
+	}
+		
 	return 0;
 }
 
