@@ -3,13 +3,20 @@
 # mkdir build
 # cd build
 # cmake -G "MSYS Makefiles" -DHDF5_INCLUDE_DIR:string=/path/to/hdf5 -DCMAKE_BUILD_TYPE=Release/Debug ../src
-# 
+#
 # make
 #
 # On Mac/Linux you can skip the '-G "MSYS Makefiles" option'
 
 PROJECT( libaps )
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+
+#For distributing on Linux hard-code in the r-path
+if(NOT WIN32)
+SET(CMAKE_SKIP_BUILD_RPATH FALSE)
+SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+SET(CMAKE_INSTALL_RPATH "\$ORIGIN:\$ORIGIN/system_libs")
+endif(NOT WIN32)
 
 #Look for hdf5 directly passed; otherwise look for system one
 if(NOT DEFINED HDF5_INCLUDE_DIR)
@@ -29,7 +36,7 @@ ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-DGCC")
 ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-std=c++11")
 ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-Wall")
 
-SET ( DLL_SRC 
+SET ( DLL_SRC
 	./lib/libaps.cpp
 	./lib/APSRack.cpp
 	./lib/APS.cpp
