@@ -32,15 +32,6 @@ switch on the front of the power supply. At this point, the FPGAs in the
 analog module are in a blank state, awaiting upload of the pulse
 sequencer firmware over the USB interface.
 
-The BBN APS requires a USB driver in order to communicate with the host
-PC. Prior to plugging the APS into the host computer, you should
-download and unzip the driver from the FTDI website
-(http://www.ftdichip.com/Drivers/D2XX.htm). After connecting to a
-Windows XP/Vista/7 machine, the ‘new hardware’ wizard will open.
-Occasionally Windows will find an appropriate driver without further
-input, but more often you will need to supply the path to the FTDI
-driver folder.
-
 While the APS can run in a standalone configuration, we recommend
 running with a 10 MHz (+7 dBm) external reference. This reference must
 be supplied at the corresponding front panel input before powering on
@@ -50,37 +41,56 @@ appropriate external trigger.
 Software
 --------
 
-The APS is driven by a C/C++ library. We have provided MATLAB, python,
-and LabVIEW bindings to this library such that use of the APS is as
-similar as possible in the various instrument control environments. The
-library is bundled into a release package that is available in the
-‘downloads’ section of the BBN quantum group website
-(http://bbn.com/technology/quantum/tools/aps). This library seamlessly
-integrates into BBN’s Qlab framework for control and analysis of
-superconducting qubit systems.
+USB Driver
+~~~~~~~~~~
 
-Download the latest ``aps-release-X.X.7z`` file from the
-tools\ :math:`\rightarrow`\ downloads section. To use these drivers
-outside of the Qlab suite, you simply need to add the relevant paths to
-your MATLAB or python code.
+The BBN APS requires a USB driver in order to communicate with the host PC.
+Prior to plugging the APS into the host computer, you should download and unzip
+the driver from the `FTDI website <http://www.ftdichip.com/Drivers/D2XX.htm>'_.
+After connecting to a Windows XP/Vista/7 machine, the ‘new hardware’ wizard will
+open. Occasionally Windows will find an appropriate driver without further
+input, but more often you will need to supply the path to the FTDI driver
+folder.
 
-To add the APS driver to an existing Qlab installation, download the
-same ``aps-release-X.X.7z`` file. Copy the ``bitfiles`` directory to
-``QLABROOT/hardware/APS/`` and copy ``libaps-cpp/build32`` and
-``libaps-cpp/build64`` to ``QLABROOT/hardware/APS/libaps-cpp/``.
+On Linux, for normal user access to the device you will have to add a udev rule.
+Adding a file to /etc/rules.d such as ``50-aps-usb-rules`` with the line
+
+.. code:: bash
+
+  # Make available to non-root users
+  SUBSYSTEM=="usb", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", GROUP="users", MODE="0666"
+
+should work.  The kernel bundles a USB virtual com port driver that will take
+precedence over the FTDI driver libaps uses. See `this FTDI guide
+<http://www.ftdichip.com/Support/Documents/AppNotes/AN_220_FTDI_Drivers_Installation_Guide_for_Linux%20.pdf>`_
+for details but running the following commands after every plug-in or power
+cycle event will work.
+
+.. code:: bash
+
+  sudo rmmod ftdi_sio
+  sudo rmmod usbserial
+
+It should also be possible to automate unbinding the VCO driver using a more
+sophisticated udev rule.
+
+libaps
+~~~~~~
+
+The APS is driven by a C++ library with a C API. We have provided MATLAB,
+python, and LabVIEW bindings to this library such that use of the APS is as
+similar as possible in the various instrument control environments. The library
+is bundled into a release package that is available in `release tab
+<https://github.com/BBN-Q/libaps/releases>`_ of the GitHub site. You simply need
+to add the relevant paths to your MATLAB or Python code. In particular for
+Python on Linux you will need to add the folder containing ``libaps.so`` to your
+``LD_LIBRARY_PATH``.
 
 Python requirements
 ~~~~~~~~~~~~~~~~~~~
 
 The BBN APS driver for Python requires Python 2.7 or later (but not
-Python 3+). You also need a working installation of NumPy and h5py; the
-later is easily available via *easy\_install* or *pip* on Unix-like
-systems (including Mac OS). Building NumPy is a fairly complicated
-procedure; therefore, we recommend obtaining a pre-built version with
-your platform’s package manager (Linux) or use a Python setup that
-already includes NumPy, such as Enthought or Python(x,y) (Windows).
-Alternatively, you may consult online resources to find how-to guides
-for compiling NumPy on your system.
+Python 3+). You also need a working installation of NumPy and h5py.  We recommend using the `Anaconda python distribution <https://store.continuum.io/cshop/anaconda/>`_.
 
 MATLAB requirements
 ~~~~~~~~~~~~~~~~~~~
