@@ -52,6 +52,8 @@ void FTDI::get_device_serials(vector<string> & deviceSerials) {
 			deviceSerials.push_back(string(devInfo[devicect].SerialNumber));
 			FILE_LOG(logDEBUG) << "Added " << deviceSerials.back() << " to device list.";
 		}
+
+		free(devInfo);
 	}
 }
 
