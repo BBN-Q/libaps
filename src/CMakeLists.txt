@@ -58,12 +58,8 @@ TARGET_LINK_LIBRARIES(test aps)
 ADD_EXECUTABLE(debug_oscillator	./lib/debug_oscillator.cpp )
 TARGET_LINK_LIBRARIES(debug_oscillator aps)
 
-if(WIN32)
-FIND_LIBRARY(FTDI_LIBRARY ftd2xx64 "../ftdi/")
+FIND_LIBRARY(FTDI_LIBRARY NAMES ftd2xx64 ftd2xx HINTS "../ftdi/")
 TARGET_LINK_LIBRARIES(aps hdf5 hdf5_cpp ${FTDI_LIBRARY})
-else(WIN32)
-TARGET_LINK_LIBRARIES(aps hdf5 hdf5_cpp ftd2xx)
-endif(WIN32)
 
 # installation section
 IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
