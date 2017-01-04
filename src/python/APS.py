@@ -17,7 +17,6 @@
 import ctypes
 from ctypes.util import find_library
 import numpy.ctypeslib as npct
-import platform
 import sys
 import os
 
@@ -41,8 +40,9 @@ libaps.get_trigger_interval.restype = ctypes.c_double
 # initialize the library
 libaps.init()
 
+APS_ROOT = os.path.dirname(os.path.realpath( __file__ )) + '/../'
 
-class APS (object):
+class APS(object):
     # implements interface to libaps
 
     # class properties
@@ -73,11 +73,8 @@ class APS (object):
     #DAC2 devices use a different bit file
     DAC2Serials = ('A6UQZB7Z', 'A6001nBU', 'A6001ixV', 'A6001nBT', 'A6001nBS')
 
-    APS_ROOT = '/../'
-
     def __init__(self):
-        scriptPath = os.path.dirname(os.path.realpath( __file__ ))
-        self.APS_ROOT = scriptPath + self.APS_ROOT
+        pass
 
     def __del__(self):
         if self.is_open:
@@ -134,9 +131,9 @@ class APS (object):
     def getDefaultBitFileName(self):
         #Check whether we have a DACII or APS device
         if self.device_serial in self.DAC2Serials:
-            return os.path.abspath(self.APS_ROOT + 'bitfiles/mqco_dac2_latest')
+            return os.path.abspath(APS_ROOT + 'bitfiles/mqco_dac2_latest')
         else:
-            return os.path.abspath(self.APS_ROOT + 'bitfiles/mqco_aps_latest')
+            return os.path.abspath(APS_ROOT + 'bitfiles/mqco_aps_latest')
 
     def init(self, force = False, filename = None):
         if not self.is_open:
@@ -365,7 +362,7 @@ class APS (object):
 
         self.samplingRate = 1200
 
-        aps.load_config(self.APS_ROOT + '/libaps-cpp/UnitTest.h5');
+        aps.load_config(APS_ROOT + '/src/lib/UnitTest.h5');
         aps.triggerSource = 'external';
         self.run()
         raw_input("Press Enter to continue...")
