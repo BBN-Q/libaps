@@ -104,7 +104,7 @@ class APS(object):
 
         if type(address) is int:
             if address + 1 > numDevices:
-                print 'APS Device: ', ID, 'not found'
+                print('APS Device: ', ID, 'not found')
                 return 2
             self.device_id = address
             self.device_serial = deviceSerials[address]
@@ -137,7 +137,7 @@ class APS(object):
 
     def init(self, force = False, filename = None):
         if not self.is_open:
-            print 'APS unit is not open'
+            print('APS unit is not open')
             return -1
 
         if filename is None:
@@ -150,7 +150,7 @@ class APS(object):
         # ch - integer (1-4)
         # waveform - assume nparray with dtype = int16 data in range (-8191, 8191) or dtype=float64 data in range (-1.0, 1.0)
         if not self.is_open:
-            print 'APS unit is not open'
+            print('APS unit is not open')
             return -1
 
         if waveform.dtype == np.dtype('int16') or waveform.dtype == np.dtype('int32'):
@@ -171,7 +171,7 @@ class APS(object):
         self.set_enabled(ch, True)
 
         if val < 0:
-            print 'loadWaveform returned an error code of:', val
+            print('loadWaveform returned an error code of:', val)
         return val
 
     def load_config(self, filename):
@@ -195,7 +195,7 @@ class APS(object):
             repeat - vector of repeats
         '''
         if not self.is_open:
-            print 'APS unit is not open'
+            print('APS unit is not open')
             return -1
 
         #TODO: we are assuming the arrays are contiguous should we check this?
@@ -221,7 +221,7 @@ class APS(object):
         val = self.librarycall('set_LL_data_IQ', ch-1, length(addr), addr_p, count_p, trigger1_p, trigger2_p, repeat_p)
 
         if val < 0:
-            print 'set_LL_data_IQ returned an error code of:', val
+            print('set_LL_data_IQ returned an error code of:', val)
 
     def run(self):
         '''
@@ -324,7 +324,7 @@ class APS(object):
 
     def librarycall(self, functionName, *args):
         if not self.is_open:
-            print 'APS unit is not open'
+            print('APS unit is not open')
             return -1
         return getattr(libaps, functionName)(self.device_id, *args)
 
@@ -343,9 +343,9 @@ class APS(object):
 
     def unitTestBasic(self):
         self.connect(0)
-        print "Initializing"
+        print("Initializing")
         self.init(False)
-        print "Current Bit File Version: ", self.readBitFileVersion()
+        print("Current Bit File Version: ", self.readBitFileVersion())
 
         wf = np.hstack((np.zeros((2000),dtype=np.float64), 0.7*np.ones((2000),dtype=np.float64)))
 
@@ -354,9 +354,9 @@ class APS(object):
             self.setRunMode(ct+1, self.RUN_WAVEFORM)
             self.set_amplitude(ct+1, 1.0)
 
-        print 'Done with load Waveform'
+        print('Done with load Waveform')
         self.run()
-        print 'Done with Trigger'
+        print('Done with Trigger')
         raw_input("Press Enter to continue...")
         self.stop()
 
