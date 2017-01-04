@@ -11,22 +11,31 @@
 # If your HDF5 install is in a non-standard location set the HDF5_ROOT
 # environment variable
 
+CMAKE_MINIMUM_REQUIRED(VERSION 3.1)
 
 PROJECT( libaps )
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+
+# Make sure we have C++11 support
+set (CMAKE_CXX_STANDARD 11)
+
+set(APS_VERSION_MAJOR 1)
+set(APS_VERSION_MINOR 4)
+set(APS_VERSION_PATCH 0)
+set(APS_VERSION_STRING ${APS_VERSION_MAJOR}.${APS_VERSION_MINOR}.${APS_VERSION_PATCH})
 
 # Look for HDF5
 FIND_PACKAGE(HDF5 REQUIRED COMPONENTS C CXX)
 INCLUDE_DIRECTORIES( ${HDF5_INCLUDE_DIRS} )
-LINK_DIRECTORIES( ${LINK_DIRECTORIES} ${HDF5_LIBRARY_DIRS} )
 
-#Grab all the header files in the src directory
+# Look for FTDI
+FIND_LIBRARY(FTDI_LIBRARY NAMES ftd2xx64 ftd2xx HINTS "../ftdi/")
+
+# Grab all the header files in the src directory
 INCLUDE_DIRECTORIES("./lib/")
 INCLUDE_DIRECTORIES("../ftdi/")
 
-#Add flags for gcc and C++11
+# Add flags for gcc and warnings
 ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-DGCC")
-ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-std=c++11")
 ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-Wall")
 
 SET ( DLL_SRC
@@ -43,33 +52,31 @@ SET_SOURCE_FILES_PROPERTIES( ${DLL_SRC} PROPERTIES LANGUAGE CXX )
 
 ADD_LIBRARY( aps SHARED ${DLL_SRC} )
 
-set(APS_VERSION_MAJOR 1)
-set(APS_VERSION_MINOR 4)
-set(APS_VERSION_PATCH 0)
-set(APS_VERSION_STRING ${APS_VERSION_MAJOR}.${APS_VERSION_MINOR}.${APS_VERSION_PATCH})
-set_target_properties(aps PROPERTIES VERSION ${APS_VERSION_STRING} SOVERSION ${APS_VERSION_MAJOR})
-set_target_properties(aps PROPERTIES MACOSX_RPATH 1)
+set_target_properties(aps PROPERTIES
+	VERSION ${APS_VERSION_STRING}
+	SOVERSION ${APS_VERSION_MAJOR}
+	MACOSX_RPATH 1
+)
 
-ADD_EXECUTABLE(test
+ADD_EXECUTABLE(run_tests
 	./lib/test.cpp
 )
-TARGET_LINK_LIBRARIES(test aps)
+TARGET_LINK_LIBRARIES(run_tests aps)
 
 ADD_EXECUTABLE(debug_oscillator	./lib/debug_oscillator.cpp )
 TARGET_LINK_LIBRARIES(debug_oscillator aps)
 
-FIND_LIBRARY(FTDI_LIBRARY NAMES ftd2xx64 ftd2xx HINTS "../ftdi/")
-TARGET_LINK_LIBRARIES(aps hdf5 hdf5_cpp ${FTDI_LIBRARY})
+TARGET_LINK_LIBRARIES(aps ${HDF5_CXX_LIBRARIES} ${FTDI_LIBRARY})
 
 # installation section
-IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-	SET(CMAKE_INSTALL_PREFIX "${PROJECT_BINARY_DIR}/install" CACHE PATH "default install path" FORCE)
-ENDIF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+# IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+# 	SET(CMAKE_INSTALL_PREFIX "${PROJECT_BINARY_DIR}/install" CACHE PATH "default install path" FORCE)
+# ENDIF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 
-SET(bin_targets test debug_oscillator)
+SET(bin_targets run_tests debug_oscillator)
 INSTALL(TARGETS ${bin_targets} aps
 	    LIBRARY DESTINATION lib
-	    RUNTIME DESTINATION bin)
+	    RUNTIME DESTINATION ${PROJECT_BINARY_DIR}/bin)
 
 INSTALL(FILES "${PROJECT_SOURCE_DIR}/lib/libaps.h"
 	    DESTINATION include)
@@ -91,13 +98,16 @@ IF(UNIX AND NOT APPLE)
 		${HDF5LIB_ALL}
 		${HDF5CPPLIB_ALL})
 ENDIF()
-INCLUDE( InstallRequiredSystemLibraries )
+
+IF(NOT ${CONDA_BUILD})
+	INCLUDE( InstallRequiredSystemLibraries )
+ENDIF()
 
 if(APPLE)
-	set_target_properties(${bin_targets} PROPERTIES INSTALL_RPATH "@loader_path/../lib")
+	# set_target_properties(${bin_targets} PROPERTIES INSTALL_RPATH "@loader_path/../lib")
 	set_target_properties(aps PROPERTIES INSTALL_RPATH "@loader_path")
 elseif(UNIX)
-	set_target_properties(${bin_targets} PROPERTIES INSTALL_RPATH "\$ORIGIN:\$ORIGIN/../lib")
+	# set_target_properties(${bin_targets} PROPERTIES INSTALL_RPATH "\$ORIGIN:\$ORIGIN/../lib")
 	set_target_properties(aps PROPERTIES INSTALL_RPATH "\$ORIGIN")
 endif()
 
