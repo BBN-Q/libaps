@@ -33,7 +33,7 @@ if libpath is None:
     libpath = sys.prefix + '/lib'
     libaps = npct.load_library("libaps", libpath)
 else:
-    libaps = CDLL(libpath)
+    libaps = ctypes.CDLL(libpath)
 
 # set up argtypes and restype for functions with arguments that aren't ints or strings
 libaps.set_channel_scale.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_float]
