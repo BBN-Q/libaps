@@ -158,8 +158,6 @@ void test::doToggleTest() {
 		cout << "\nCmd: [t]rigger [d]isable e[x]it: ";
 	}
 
-	close(0);
-
 }
 
 void test::doStoreLoadTest() {
@@ -337,5 +335,3 @@ int main(int argc, char** argv) {
 	return 0;
 
 }
-
-

@@ -48,16 +48,20 @@ using boost::thread;
 //HDF5 library
 #include "H5Cpp.h"
 
-//Needed for usleep on gcc 4.7
-#include <unistd.h>
-
 //Deal with some Windows/Linux difference
 #ifdef _WIN32
 #include "windows.h"
 #include "ftd2xx_win.h"
+
+#else
+#include "ftd2xx.h"
+#define EXPORT
+#endif
+
+#ifdef _MSC_VER
 //Visual C++ doesn't have a usleep function so define one
-/*
- inline void usleep(int waitTime) {
+
+inline void usleep(int waitTime) {
     long int time1 = 0, time2 = 0, freq = 0;
 
     QueryPerformanceCounter((LARGE_INTEGER *) &time1);
@@ -67,11 +71,11 @@ using boost::thread;
         QueryPerformanceCounter((LARGE_INTEGER *) &time2);
     } while((time2-time1) < waitTime);
 }
-*/
 #else
-#include "ftd2xx.h"
-#define EXPORT
-#endif
+//Needed for usleep on gcc 4.7
+#include <unistd.h>
+
+#endif // _MSC_VER
 
 #include "logger.h"
 
@@ -191,5 +195,3 @@ inline int mymod(int a, int b) {
 }
 
 #endif /* HEADINGS_H_ */
-
-

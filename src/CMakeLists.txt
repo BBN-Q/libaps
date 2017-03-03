@@ -24,8 +24,23 @@ set(APS_VERSION_PATCH 0)
 set(APS_VERSION_STRING ${APS_VERSION_MAJOR}.${APS_VERSION_MINOR}.${APS_VERSION_PATCH})
 
 # Look for HDF5
-FIND_PACKAGE(HDF5 REQUIRED COMPONENTS C CXX)
-INCLUDE_DIRECTORIES( ${HDF5_INCLUDE_DIRS} )
+if(MSVC)
+    # look for HDF5 using the HDF5 provided hdf5-config.cmake
+    # only works on Windows for now because there both Anaconda and HDF5 provide hdf5-config.cmake
+    find_package (HDF5 COMPONENTS C CXX NO_MODULE REQUIRED static)
+    include_directories (${HDF5_INCLUDE_DIR})
+    set (HDF5_LINK_LIBS ${HDF5_CXX_STATIC_LIBRARY})
+else()
+    # otherwise fall back to CMake's built-in FindHDF5.cmake logic
+    find_package(HDF5 REQUIRED COMPONENTS C CXX)
+    include_directories( ${HDF5_INCLUDE_DIRS} )
+    set (HDF5_LINK_LIBS ${HDF5_CXX_LIBRARIES})
+    set (HDF5_INCLUDE_DIR ${HDF5_INCLUDE_DIRS})
+endif()
+
+if(HDF5_FOUND)
+    message("Found HDF5 version ${HDF5_VERSION} and libraries ${HDF5_LINK_LIBS} with headers in ${HDF5_INCLUDE_DIR}")
+endif()
 
 # Look for FTDI
 FIND_LIBRARY(FTDI_LIBRARY NAMES ftd2xx64 ftd2xx HINTS "../ftdi/")
@@ -35,8 +50,12 @@ INCLUDE_DIRECTORIES("./lib/")
 INCLUDE_DIRECTORIES("../ftdi/")
 
 # Add flags for gcc and warnings
-ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-DGCC")
-ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-Wall")
+if(MSVC)
+	add_definitions(${CMAKE_CXX_FLAGS} "/W3 /wd4127 /wd4201 /wd4244 /wd4267 /wd4996")
+else()
+	ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-DGCC")
+	ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-Wall")
+endif()
 
 SET ( DLL_SRC
 	./lib/libaps.cpp
@@ -51,6 +70,7 @@ SET ( DLL_SRC
 SET_SOURCE_FILES_PROPERTIES( ${DLL_SRC} PROPERTIES LANGUAGE CXX )
 
 ADD_LIBRARY( aps SHARED ${DLL_SRC} )
+TARGET_LINK_LIBRARIES(aps ${HDF5_LINK_LIBS} ${FTDI_LIBRARY})
 
 set_target_properties(aps PROPERTIES
 	VERSION ${APS_VERSION_STRING}
@@ -65,8 +85,6 @@ TARGET_LINK_LIBRARIES(run_tests aps)
 
 ADD_EXECUTABLE(debug_oscillator	./lib/debug_oscillator.cpp )
 TARGET_LINK_LIBRARIES(debug_oscillator aps)
-
-TARGET_LINK_LIBRARIES(aps ${HDF5_CXX_LIBRARIES} ${FTDI_LIBRARY})
 
 # installation section
 # IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
