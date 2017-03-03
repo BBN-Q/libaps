@@ -75,6 +75,7 @@ TARGET_LINK_LIBRARIES(aps ${HDF5_LINK_LIBS} ${FTDI_LIBRARY})
 set_target_properties(aps PROPERTIES
 	VERSION ${APS_VERSION_STRING}
 	SOVERSION ${APS_VERSION_MAJOR}
+	PREFIX "lib" # force lib prefix even on Windows
 	MACOSX_RPATH 1
 )
 
