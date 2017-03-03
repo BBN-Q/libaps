@@ -92,10 +92,14 @@ TARGET_LINK_LIBRARIES(debug_oscillator aps)
 # 	SET(CMAKE_INSTALL_PREFIX "${PROJECT_BINARY_DIR}/install" CACHE PATH "default install path" FORCE)
 # ENDIF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 
-SET(bin_targets run_tests debug_oscillator)
-INSTALL(TARGETS ${bin_targets} aps
+INSTALL(TARGETS aps
 	    LIBRARY DESTINATION lib
-	    RUNTIME DESTINATION ${PROJECT_BINARY_DIR}/bin)
+	    RUNTIME DESTINATION bin)
+
+SET(bin_targets run_tests debug_oscillator)
+IF(NOT ${CONDA_BUILD})
+	INSTALL(TARGETS ${bin_targets} DESTINATION ${PROJECT_BINARY_DIR}/bin)
+ENDIF()
 
 INSTALL(FILES "${PROJECT_SOURCE_DIR}/lib/libaps.h"
 	    DESTINATION include)
