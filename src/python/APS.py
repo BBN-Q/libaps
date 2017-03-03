@@ -24,10 +24,16 @@ import numpy as np
 import h5py
 
 # load the shared library
-libpath = find_library("libaps")
+# try with and without "lib" prefix
+libpath = find_library("aps")
+if libpath is None:
+    libpath = find_library("libaps")
+# if we still can't find it, then look in python prefix (where conda stores binaries)
 if libpath is None:
     libpath = sys.prefix + '/lib'
-libaps = npct.load_library("libaps", libpath)
+    libaps = npct.load_library("libaps", libpath)
+else:
+    libaps = CDLL(libpath)
 
 # set up argtypes and restype for functions with arguments that aren't ints or strings
 libaps.set_channel_scale.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_float]
