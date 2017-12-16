@@ -511,7 +511,7 @@ classdef APS < hgsetget
             switch computer()
                 case 'PCWIN64'
                     libfname = 'libaps.dll';
-                    protoFile = @obj.libaps;
+                    protoFile = 'libaps.h';
                 case 'MACI64'
                     libfname = 'libaps.dylib';
                     error('Need prototype file setup for OS X');
