@@ -52,8 +52,16 @@ libaps.get_trigger_interval.restype = ctypes.c_double
 # initialize the library
 libaps.init()
 
+#DAC2 devices use a different bit file
+DAC2_SERIALS = ('A6UQZB7Z', 'A6001nBU', 'A6001ixV', 'A6001nBT', 'A6001nBS')
+
+def is_dacii(serial):
+    """Check if a given serial number is for a DACII, as these use different bitfiles."""
+    return serian in DAC2_SERIALS
+
+
 class APS(object):
-    # implements interface to libaps
+    """Implements an interface to the BBN APS unit via the libaps C library."""
 
     # class properties
     device_id = 0
@@ -80,9 +88,6 @@ class APS(object):
 
     lastSeqFile = ''
 
-    #DAC2 devices use a different bit file
-    DAC2Serials = ('A6UQZB7Z', 'A6001nBU', 'A6001ixV', 'A6001nBT', 'A6001nBS')
-
     def __init__(self):
         pass
 
@@ -91,27 +96,38 @@ class APS(object):
             self.disconnect()
 
     def enumerate(self):
-        #List the number of devices attached and their serial numbers
+        """List the number of devices attached and their serial numbers.
 
-        #First get the number of devices
+        Args:
+            - None
+
+        Returns:
+            A tuple (int, list(str)). The first element is the number of APS
+            units found, and the list contains their serial numbers.
+        """
+
         numDevices = libaps.get_numDevices()
-
         deviceSerials = []
-        #Now, for each device, get the associated serial number
+        #For each device, get the associated serial number
         charBuffer = ctypes.create_string_buffer(64)
         for ct in range(numDevices):
             libaps.get_deviceSerial(ct,charBuffer)
-            deviceSerials.append(charBuffer.value)
-
+            deviceSerials.append(charBuffer.value.decode())
         return numDevices, deviceSerials
 
     def connect(self, address):
-        # Experiment framework function for connecting to an APS
+        """Connect to a specific APS unit. If an APS is already connected, it
+        will be disconnected.
+
+        Args:
+            - address: Serial number of device that should be connected to.
+        Returns:
+            Status code: 0 if success, 2 if device ID not found.
+        """
         if self.is_open:
             self.disconnect()
-
         numDevices, deviceSerials = self.enumerate()
-
+        ##TODO: Decide if we want to keep the address-by-ID in here, as it's confusing.
         if type(address) is int:
             if address + 1 > numDevices:
                 print('APS Device: ', ID, 'not found')
@@ -123,16 +139,23 @@ class APS(object):
             assert address in deviceSerials, 'Ooops!  I cannot find that device.'
             self.device_id = deviceSerials.index(address);
             self.device_serial = address
-            val = libaps.connect_by_serial(address)
-
+            val = libaps.connect_by_serial(address.encode())
         if val == 0:
             self.is_open = True
-
         return val
 
     def disconnect(self):
-        libaps.disconnect_by_ID(self.device_id)
-        self.is_open = 0
+        """Disconnect from the APS unit.
+
+        Args:
+            - None.
+        Returns:
+            - None.
+        """
+
+        if self.is_open:
+            libaps.disconnect_by_ID(self.device_id)
+            self.is_open = False
 
 
     def readBitFileVersion(self):
