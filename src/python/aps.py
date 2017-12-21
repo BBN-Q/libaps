@@ -23,6 +23,8 @@ import os
 import numpy as np
 import h5py
 
+APS_PY_WRAPPER_VERSION = 1.4
+
 APS_ROOT = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath( __file__ )), '../../'))
 
 # load the shared library
