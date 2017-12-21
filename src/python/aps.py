@@ -296,7 +296,8 @@ class APS(object):
             - mode : 1 = continuous, 0 = triggered
         """
         if mode not in (self.CONTINUOUS, self.TRIGGERED):
-            self.librarycall('set_repeat_mode', ch-1, mode)
+            raise ValueError("Unrecognized repeat mode: {}".format(mode))
+        self.librarycall('set_repeat_mode', ch-1, mode)
 
     def set_link_list_repeat(self, repeat):
         """Set link list repeat number. 0 indicates no repeats.
