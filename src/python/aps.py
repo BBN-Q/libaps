@@ -80,7 +80,7 @@ class APS(object):
     # trigger modes
     TRIGGER_INTERNAL = 0
     TRIGGER_EXTERNAL = 1
-    VALID_FREQUENCIES = [1200,600,300,100,40]
+    VALID_FREQUENCIES = (1200, 600, 300, 100, 40)
 
     def __init__(self):
         pass
@@ -184,7 +184,7 @@ class APS(object):
             return -1
         if filename is None:
             filename = self._get_default_bitfile_name()
-        return self.librarycall('initAPS', filename, force)
+        return self.librarycall('initAPS', str(filename).encode(), force)
 
     def load_waveform(self, ch, waveform):
         """Load a waveform (as numpy array) to a paricular channel on the connected APS.
@@ -227,7 +227,7 @@ class APS(object):
             - filename: Config file.
         """
         #Pass through to C
-        val = self.librarycall('load_sequence_file', str(filename))
+        val = self.librarycall('load_sequence_file', str(filename).encode())
         if val < 0:
             raise IOError('Unable to load sequence file {0}. Returned error code: {1}'.format(filename, val))
 
@@ -307,56 +307,101 @@ class APS(object):
         self.librarycall('set_miniLL_repeat', repeat)
 
     @property
-    def samplingRate(self):
+    def sampling_rate(self):
+        """DAC sampling rate, in MS/s."""
         return self.librarycall('get_sampleRate')
 
-    @samplingRate.setter
-    def samplingRate(self, freq):
+    @sampling_rate.setter
+    def sampling_rate(self, freq):
+        if freq not in self.VALID_FREQUENCIES:
+            raise ValueError("Invalid sampling rate {}. Must be one of {}.".format(freq, self.VALID_FREQUENCIES))
         self.librarycall('set_sampleRate', freq)
 
     @property
-    def triggerSource(self):
+    def trigger_source(self):
+        """APS trigger source. Must be one of 'internal' or 'external'"""
         valueMap = {self.TRIGGER_INTERNAL: 'internal', self.TRIGGER_EXTERNAL: 'external'}
         return valueMap[self.librarycall('get_trigger_source')]
 
-    @triggerSource.setter
-    def triggerSource(self, source):
+    @trigger_source.setter
+    def trigger_source(self, source):
         allowedValues = {'internal': self.TRIGGER_INTERNAL, 'external': self.TRIGGER_EXTERNAL}
-        assert source in allowedValues, 'Unrecognized trigger source.'
-        self.librarycall('set_trigger_source', allowedValues[source])
+        if source.lower() not in allowedValues:
+            raise ValueError('Unrecognized trigger source: {}'.format(source))
+        self.librarycall('set_trigger_source', allowedValues[source.lower()])
 
     @property
-    def triggerInterval(self):
+    def trigger_interval(self):
+        """APS trigger interval."""
         return self.librarycall('get_trigger_interval')
 
-    @triggerInterval.setter
-    def triggerInterval(self, interval):
+    @trigger_interval.setter
+    def trigger_interval(self, interval):
         self.librarycall('set_trigger_interval', interval)
 
     def set_offset(self, ch, offset):
+        """Set channel offset.
+
+        Args:
+            - ch: DAC channel (1-4).
+            - offset: Offset in V.
+        Returns:
+            Status code.
+        """
         return self.librarycall('set_channel_offset', ch-1, offset)
 
     def set_amplitude(self, ch, amplitude):
+        """Set DAC channel amplitude.
+
+        Args:
+            - ch: DAC channel (1-4).
+            - offset: DAC amplitude (V).
+        Returns:
+            Status code.
+        """
         return self.librarycall('set_channel_scale', ch-1, amplitude)
 
     def set_enabled(self, ch, enabled):
+        """Enable a DAC channel.
+
+        Args:
+            - ch: DAC channel (1-4).
+            - offset: Boolean for enabling channel
+        Returns:
+            Status code.
+        """
         return self.librarycall('set_channel_enabled', ch-1, enabled)
 
     def set_trigger_delay(self, ch, delay):
+        """Set DAC channel trigger delay.
+
+        Args:
+            - ch: DAC channel (1-4).
+            - delay: Channel trigger delay (s)
+        Returns:
+            Status code.
+        """
         return self.librarycall('set_channel_trigDelay', ch-1, delay)
 
     def load_waveform_from_file(self, ch, filename):
-        '''
-        Loads a single channel waveform from an HDF5 file
-        Expects data in variable 'WFVec'
-        '''
+        """ Load a single channel waveform from an HDF5 file.
+
+            Expects data in top level 'WFVec' key.
+
+        Args:
+            - ch: DAC channel (1-4).
+            - filename: HDF5 file with waveform data.
+        """
         with h5py.File(filename, 'r') as FID:
             self.loadWaveform(ch, FID['WFVec'].value)
 
-    def setAll(self, settings):
-        '''
-        Again mimicing the Matlab driver to load all the settings from a dictionary.
-        '''
+    def set_all(self, settings):
+        """ Load all settings from dictionary, similar to MATLAB driver.
+
+        Args:
+            - settings: settings dictionary.
+        """
+        #TODO: Describe required settings in docstring.
 
         #First load all the channel offsets, scalings, enabled
         CHANNELNAMES = ('chan_1','chan_2','chan_3','chan_4')
@@ -367,7 +412,6 @@ class APS(object):
             self.setRunMode(ch+1, settings['runMode'])
             if 'seqfile' in settings[channelName] and settings[channelName]['seqfile']:
                 self.load_waveform_from_file(ch+1, settings[channelName]['seqfile'])
-
         #Load the sequence file information
         if 'chAll' in settings and settings['chAll']['seqfile']:
             self.load_config(settings['chAll']['seqfile'])
@@ -376,14 +420,17 @@ class APS(object):
         self.triggerInterval = settings['triggerInterval']
 
     def set_log_level(self, level):
-        '''
-        set logging level (info = 2, debug = 3, debug1 = 4, debug2 = 5)
-        '''
+        """Set libaps logging level.
+
+        Args:
+         -level: Logging level: (info = 2, debug = 3, debug1 = 4, debug2 = 5).
+        """
         libaps.set_logging_level(level)
 
     def librarycall(self, functionName, *args):
+        """Call a function from the C library.
+        """
         if not self.is_open:
-            print('APS unit is not open')
             return -1
         return getattr(libaps, functionName)(self.device_id, *args)
 
@@ -398,37 +445,47 @@ class APS(object):
         pass
 
     def read_register(self, fpga, address):
+        """Read an FPGA register.
+        """
         return self.librarycall('read_register', fpga, address)
 
-    def unitTestBasic(self):
-        self.connect(0)
-        print("Initializing")
-        self.init(False)
-        print("Current Bit File Version: ", self.readBitFileVersion())
+def unit_test_basic(address, log_level=2):
+    """Basic test of APS functionality.
 
-        wf = np.hstack((np.zeros((2000),dtype=np.float64), 0.7*np.ones((2000),dtype=np.float64)))
+    Args:
+        - address: APS unit to test.
+        - Log level: Optional log level.
+    """
+    aps = APS()
+    aps.connect(address)
+    aps.set_log_level(log_level)
+    print("Initializing...")
+    aps.init(False)
+    print("Current Bit File Version: ", aps.read_bitfile_version())
+    print('Loading waveform...')
+    wf = np.hstack((np.zeros((2000),dtype=np.float64), 0.7*np.ones((2000),dtype=np.float64)))
+    for ct in range(4):
+        aps.load_waveform(ct+1, wf)
+        aps.set_run_mode(ct+1, aps.RUN_WAVEFORM)
+        aps.set_amplitude(ct+1, 1.0)
+    print("Running waveform...")
+    aps.run()
+    print('Done with trigger...')
+    input("Press Enter to continue...")
+    aps.stop()
 
-        for ct in range(4):
-            self.loadWaveform(ct+1, wf)
-            self.setRunMode(ct+1, self.RUN_WAVEFORM)
-            self.set_amplitude(ct+1, 1.0)
-
-        print('Done with load Waveform')
-        self.run()
-        print('Done with Trigger')
-        raw_input("Press Enter to continue...")
-        self.stop()
-
-        self.samplingRate = 1200
-
-        aps.load_config(APS_ROOT + '/src/lib/UnitTest.h5');
-        aps.triggerSource = 'external';
-        self.run()
-        raw_input("Press Enter to continue...")
-        self.stop()
-        self.disconnect();
+    aps.sampling_rate = 1200
+    print('Loading test HDF5 file...')
+    aps.load_config(os.path.join(APS_ROOT, 'src/lib/UnitTest.h5'))
+    aps.trigger_source = 'external'
+    print("Running test HDF5 file...")
+    aps.run()
+    print('Done with trigger...')
+    input("Press Enter to continue...")
+    aps.stop()
+    aps.disconnect();
+    print('All done!')
 
 
 if __name__ == '__main__':
-    aps = APS()
-    aps.unitTestBasic()
+    unit_test_basic()
