@@ -23,7 +23,7 @@ import os
 import numpy as np
 import h5py
 
-APS_ROOT = os.path.realpath(os.path.dirname(os.path.realpath( __file__ )) + '/../../')
+APS_ROOT = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath( __file__ )), '../../'))
 
 # load the shared library
 # try with and without "lib" prefix
@@ -57,36 +57,30 @@ DAC2_SERIALS = ('A6UQZB7Z', 'A6001nBU', 'A6001ixV', 'A6001nBT', 'A6001nBS')
 
 def is_dacii(serial):
     """Check if a given serial number is for a DACII, as these use different bitfiles."""
-    return serian in DAC2_SERIALS
+    return serial in DAC2_SERIALS
 
 
 class APS(object):
     """Implements an interface to the BBN APS unit via the libaps C library."""
 
-    # class properties
+    ## class properties
     device_id = 0
     device_serial = ''
-
     Address = 0
-
     is_open = False
+    lastSeqFile = ''
 
     ## constants
     # run modes
     RUN_SEQUENCE = 1
     RUN_WAVEFORM = 0
-
     # repeat modes
     CONTINUOUS = 0
     TRIGGERED = 1
-
     # trigger modes
     TRIGGER_INTERNAL = 0
     TRIGGER_EXTERNAL = 1
-
     VALID_FREQUENCIES = [1200,600,300,100,40]
-
-    lastSeqFile = ''
 
     def __init__(self):
         pass
@@ -105,7 +99,6 @@ class APS(object):
             A tuple (int, list(str)). The first element is the number of APS
             units found, and the list contains their serial numbers.
         """
-
         numDevices = libaps.get_numDevices()
         deviceSerials = []
         #For each device, get the associated serial number
@@ -149,49 +142,73 @@ class APS(object):
 
         Args:
             - None.
-        Returns:
-            - None.
         """
-
         if self.is_open:
             libaps.disconnect_by_ID(self.device_id)
             self.is_open = False
 
 
-    def readBitFileVersion(self):
+    def read_bitfile_version(self):
+        """Read the bitfile version from the APS unit.
+
+        Args:
+            - None.
+        Returns:
+            - Bitfile version
+        """
         return self.librarycall('read_bitfile_version')
 
-    def getDefaultBitFileName(self):
-        #Check whether we have a DACII or APS device
-        if self.device_serial in self.DAC2Serials:
-            return os.path.abspath(APS_ROOT + 'bitfiles/mqco_dac2_latest')
+    def _get_default_bitfile_name(self):
+        """Return name of default bitfile.
+
+        Args:
+            - None.
+        """
+        if is_dacii(self.device_serial):
+            return os.path.join(APS_ROOT, 'bitfiles/mqco_dac2_latest')
         else:
-            return os.path.abspath(APS_ROOT + 'bitfiles/mqco_aps_latest')
+            return os.path.join(APS_ROOT, 'bitfiles/mqco_aps_latest')
 
     def init(self, force = False, filename = None):
-        if not self.is_open:
-            print('APS unit is not open')
-            return -1
+        """Initialize the APS unit and load the FPGA bitfile. If the default bitfile
+        matches the version already loaded, will not reload unless force is True.
 
+        Args:
+            - force: Optional, if True forces the APS to reload the bitfile from disk.
+            - filename: Optional filename of bitfile to load. If None loads default from
+                libaps/bitfiles/ directory.
+        Returns:
+            - Status code: 0 for success, -1 for failure.
+        """
+        if not self.is_open:
+            return -1
         if filename is None:
-            filename = self.getDefaultBitFileName()
+            filename = self._get_default_bitfile_name()
+        return self.librarycall('initAPS', filename, force)
 
-        self.librarycall('initAPS', filename, force)
+    def load_waveform(self, ch, waveform):
+        """Load a waveform (as numpy array) to a paricular channel on the connected APS.
 
-    def loadWaveform(self, ch, waveform):
-        # inputs:
-        # ch - integer (1-4)
-        # waveform - assume nparray with dtype = int16 data in range (-8191, 8191) or dtype=float64 data in range (-1.0, 1.0)
+        Waveform data type must be int16, int32, float32 or float64. Integers must be in
+        range (-8191, 8191) and will be cast to int16. Floats must be in range (-1, 1) and
+        will be cast to float32. The casts are done using numpy.ndarray.astype(casting='unsafe')
+        so data conversions may be done, and ranges are unchecked.
+
+        The channel will also be enabled.
+
+        Args:
+            - ch: Channel, integer 1-4
+            - waveform: Numpy array of waveform data.
+        Returns:
+            - Status code: -1 for failure, 0 for success.
+        """
         if not self.is_open:
-            print('APS unit is not open')
             return -1
-
         if waveform.dtype == np.dtype('int16') or waveform.dtype == np.dtype('int32'):
             waveform = waveform.astype('int16')
             c_int_p = ctypes.POINTER(ctypes.c_int16)
             waveform_p = waveform.ctypes.data_as(c_int_p)
             val = self.librarycall('set_waveform_int', ch-1, waveform_p, waveform.size)
-
         elif waveform.dtype == np.dtype('float32') or waveform.dtype == np.dtype('float64'):
             # libaps-cpp expects float rather than double
             waveform = waveform.astype('float32')
@@ -200,84 +217,93 @@ class APS(object):
             val = self.librarycall('set_waveform_float', ch-1, waveform_p, waveform.size)
         else:
             raise NameError('Unhandled waveform data type. Use int16 or float64')
-
         self.set_enabled(ch, True)
-
-        if val < 0:
-            print('loadWaveform returned an error code of:', val)
         return val
 
     def load_config(self, filename):
-        '''
-        Load a complete 4 channel configuration file
-        '''
+        """Load a complete 4 channel configuration file.
 
+        Args:
+            - filename: Config file.
+        """
         #Pass through to C
         val = self.librarycall('load_sequence_file', str(filename))
         if val < 0:
-            raise NameError('Unable to load sequence file {0}. Returned error code: {1}'.format(filename, val))
+            raise IOError('Unable to load sequence file {0}. Returned error code: {1}'.format(filename, val))
 
     def load_LL(self, ch, addr, count, trigger1, trigger2, repeat):
-        '''
-        Directly loads link list data into memory
-            ch - channel to load (1-4)
-            addr - vector of addresses
-            count - vector of counts
-            trigger1 - vector of I channel triggers
-            trigger2 - vector of Q channel triggers
-            repeat - vector of repeats
-        '''
+        """ Directly loads link list data into memory
+
+        Args:
+            - ch: Channel to load (1-4)
+            - addr: Vector of addresses
+            - count: vector of counts
+            - trigger1: vector of I channel triggers
+            - trigger2: vector of Q channel triggers
+            - repeat: vector of repeats
+        Returns:
+            Status code.
+        """
         if not self.is_open:
-            print('APS unit is not open')
             return -1
-
         #TODO: we are assuming the arrays are contiguous should we check this?
-
         # convert each array to uint16 pointer
         c_uint16_p = ctypes.POINTER(ctypes.c_uint16)
-
         addr = offsets.astype(np.uint16)
         addr_p = offsets.ctypes.data_as(c_uint16_p)
-
         count = counts.astype(np.uint16)
         count_p = counts.ctypes.data_as(c_uint16_p)
-
         trigger1 = trigger.astype(np.uint16)
         trigger1_p = trigger.ctypes.data_as(c_uint16_p)
-
         trigger2 = trigger.astype(np.uint16)
         trigger2_p = trigger.ctypes.data_as(c_uint16_p)
-
         repeat = repeat.astype(np.uint16)
         repeat_p = repeat.ctypes.data_as(c_uint16_p)
-
-        val = self.librarycall('set_LL_data_IQ', ch-1, length(addr), addr_p, count_p, trigger1_p, trigger2_p, repeat_p)
-
-        if val < 0:
-            print('set_LL_data_IQ returned an error code of:', val)
+        return self.librarycall('set_LL_data_IQ', ch-1, length(addr), addr_p, count_p, trigger1_p, trigger2_p, repeat_p)
 
     def run(self):
-        '''
-        Set the trigger and start things going.
-        '''
+        """Set the trigger and start things going.
+
+        Args:
+            - None.
+        """
         self.librarycall('run')
 
     def stop(self):
-        ''' Stop everything '''
+        """Stop everything
+
+        Args:
+            - None.
+        """
         self.librarycall('stop')
 
-    def setRunMode(self, ch, mode):
-        # ch : DAC channel (1-4)
-        # mode : 1 = sequence, 0 = waveform
+    def set_run_mode(self, ch, mode):
+        """Set APS channel run mode.
+
+        Args:
+            - ch: DAC channel (1-4)
+            - mode: 1 = sequence, 0 = waveform
+        """
+        if mode not in (self.RUN_SEQUENCE, self.RUN_WAVEFORM):
+            raise ValueError("Unrecognized run mode: {}.".format(mode))
         self.librarycall('set_run_mode', ch-1, mode)
 
-    def setRepeatMode(self, ch, mode):
-        # ch : DAC channel (1-4)
-        # mode : 1 = continuous, 0 = triggered
-        self.librarycall('set_repeat_mode', ch-1, mode)
+    def set_repeat_mode(self, ch, mode):
+        """Set APS repeat mode.
 
-    def setLinkListRepeat(self, repeat):
-        # repeat : number of times to loop each miniLL (0 = no repeats)
+        Args:
+            - ch : DAC channel (1-4)
+            - mode : 1 = continuous, 0 = triggered
+        """
+        if mode not in (self.CONTINUOUS, self.TRIGGERED):
+            self.librarycall('set_repeat_mode', ch-1, mode)
+
+    def set_link_list_repeat(self, repeat):
+        """Set link list repeat number. 0 indicates no repeats.
+
+        Args:
+            - repeat: number of times to loop each miniLL (0 = no repeats)
+        """
         self.librarycall('set_miniLL_repeat', repeat)
 
     @property
