@@ -23,6 +23,8 @@ import os
 import numpy as np
 import h5py
 
+APS_ROOT = os.path.realpath(os.path.dirname(os.path.realpath( __file__ )) + '/../../')
+
 # load the shared library
 # try with and without "lib" prefix
 libpath = find_library("aps")
@@ -30,8 +32,12 @@ if libpath is None:
     libpath = find_library("libaps")
 # if we still can't find it, then look in python prefix (where conda stores binaries)
 if libpath is None:
-    libpath = sys.prefix + '/lib'
-    libaps = npct.load_library("libaps", libpath)
+    try:
+        libaps = npct.load_library("libaps", libpath)
+    #Finally... load it from this directory
+    except OSError:
+        libpath = os.path.join(APS_ROOT, 'build')
+        libaps = npct.load_library("libaps", libpath)
 else:
     libaps = ctypes.CDLL(libpath)
 
@@ -45,8 +51,6 @@ libaps.get_trigger_interval.restype = ctypes.c_double
 
 # initialize the library
 libaps.init()
-
-APS_ROOT = os.path.dirname(os.path.realpath( __file__ )) + '/../'
 
 class APS(object):
     # implements interface to libaps
