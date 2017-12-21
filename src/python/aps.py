@@ -393,7 +393,7 @@ class APS(object):
             - filename: HDF5 file with waveform data.
         """
         with h5py.File(filename, 'r') as FID:
-            self.loadWaveform(ch, FID['WFVec'].value)
+            self.loadWaveform(ch-1, FID['WFVec'].value)
 
     def set_all(self, settings):
         """ Load all settings from dictionary, similar to MATLAB driver.
