@@ -38,9 +38,10 @@ void test::programSquareWaves() {
 	if (pulseMem) free(pulseMem);
 }
 
-void test::loadSequenceFile() {
+void test::loadSequenceFile(const std::string & seqFile) {
 	set_trigger_interval(0, 0.001);
-	load_sequence_file(0, "U:\\AWG-Edison\\Ramsey\\Ramsey-BBNAPS1.h5");
+	cout << "Loading sequence file: " << string(seqFile) << endl;
+	load_sequence_file(0, const_cast<char*>(seqFile.c_str()));
 	for (int ch = 0; ch < 4; ch++ ) {
 		set_channel_enabled(0, ch, 1);
 	}
@@ -254,7 +255,7 @@ int main(int argc, char** argv) {
 	string bitFile = getCmdOption(argv, argv + argc, "-b");
 
 	if (bitFile.length() == 0) {
-		bitFile = "../../bitfiles/mqco_aps_latest";
+		bitFile = "../bitfiles/mqco_aps_latest";
 	}
 
 	cout << "Programming device " << device_id << " using: " << string(bitFile) << endl;
@@ -321,7 +322,8 @@ int main(int argc, char** argv) {
 	}
 
 	if (cmdOptionExists(argv, argv + argc, "-seq")) {
-			test::loadSequenceFile();
+			string sequenceFile = getCmdOption(argv, argv + argc, "-seq");
+			test::loadSequenceFile(sequenceFile);
 	}
 
 	if (cmdOptionExists(argv, argv + argc, "-offset")) {

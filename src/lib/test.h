@@ -9,7 +9,7 @@ namespace test {
 	void doToggleTest();
 
 	void programSquareWaves();
-	void loadSequenceFile();
+	void loadSequenceFile(const std::string & seqFile);
 	void streaming();
 	void offsetScale();
 	void doBulkStateFileTest();
