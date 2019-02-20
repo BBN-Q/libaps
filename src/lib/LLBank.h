@@ -29,7 +29,7 @@ public:
 
 	WordVec get_packed_data(const size_t &, const size_t &);
 
-	int write_state_to_hdf5(  H5::H5File & , const string & );
+	// int write_state_to_hdf5(  H5::H5File & , const string & );
 	int read_state_from_hdf5( H5::H5File & , const string & );
 
 

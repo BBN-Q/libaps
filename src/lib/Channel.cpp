@@ -145,7 +145,7 @@ int Channel::write_state_to_hdf5(H5::H5File & H5StateFile, const string & rootSt
 	return 0;
 }
 
-int Channel::read_state_from_hdf5(H5::H5File & H5StateFile, const string & rootStr){
+int Channel::read_state_from_hdf5(std::fstream &file, const string & rootStr){
 	clear_data();
 	// read waveform data
 	waveform_ = h5array2vector<float>(&H5StateFile, rootStr + "/waveformLib",   H5::PredType::NATIVE_INT16);
