@@ -265,8 +265,8 @@ int APS::load_sequence_file(const string & seqFile){
 	    bool has_LLs[4];
 	    bool isIQMode[4];
 	    uint64_t buff_length;
-	    uint16_t num_chans;
-	    bool miniLLRepeat, isIQMode;
+	    // uint16_t num_chans;
+	    bool miniLLRepeat;
 
 	    std::fstream file(seqFile, std::ios::binary | std::ios::in);
 	    if( !file ) throw runtime_error("Unable to open sequence file.");
@@ -294,10 +294,10 @@ int APS::load_sequence_file(const string & seqFile){
 		file.read(reinterpret_cast<char *> (&has_LLs[0]), sizeof(bool));
 		file.read(reinterpret_cast<char *> (&has_LLs[2]), sizeof(bool));
 		for(int chanct=0; chanct<4; chanct++){
-			if has_LLs[chanct] {
-				if (isIQMode) {
+			if (has_LLs[chanct]) {
+				if (isIQMode[chanct]) {
 					channels_[chanct].LLBank_.IQMode = true;
-					int status = channels_[chanct].LLBank_.read_state_from_hdf5(H5SeqFile, chanStrs[chanct]+"/linkListData");
+					int status = channels_[chanct].LLBank_.read_state_from_file(file);
 					if (status != 0) return status;
 					//If the length is less than can fit on the chip then write it to the device
 					if (channels_[chanct].LLBank_.length < MAX_LL_LENGTH){
@@ -310,42 +310,6 @@ int APS::load_sequence_file(const string & seqFile){
 		}
 		set_miniLL_repeat(static_cast<USHORT>(miniLLRepeat));
 		return 0;
-
-			// //Check if there is the linklist data and if it is IQ mode style
-			// H5::Group chanGroup = H5SeqFile.openGroup(chanStr);
-			// bool isLinkListData;
-			// try {
-			// 	chanGroup.openGroup("linkListData");
-			// 	isLinkListData = true;
-			// } catch (H5::GroupIException e) {
-			// 	isLinkListData = false;
-			// }
-			// USHORT isIQMode = h5element2element<USHORT>("isIQMode", &chanGroup, H5::PredType::NATIVE_UINT16);
-			// chanGroup.close();
-
-			//Load the linklist data
-			// if (isLinkListData){
-				// if (isIQMode){
-				// 	channels_[chanct].LLBank_.IQMode = true;
-				// 	int status = channels_[chanct].LLBank_.read_state_from_hdf5(H5SeqFile, chanStrs[chanct]+"/linkListData");
-				// 	if (status != 0) return status;
-				// 	//If the length is less than can fit on the chip then write it to the device
-				// 	if (channels_[chanct].LLBank_.length < MAX_LL_LENGTH){
-				// 		write_LL_data_IQ(dac2fpga(chanct), 0, 0, channels_[chanct].LLBank_.length, true );
-				// 	}
-
-				// }
-				// else{
-				// 	channels_[chanct].LLBank_.read_state_from_hdf5(H5SeqFile, chanStrs[chanct]+"/linkListData");
-				// }
-			// }
-		// }
-		//Set the mini LL count
-		// H5::Group rootGroup = H5SeqFile.openGroup("/");
-		// USHORT miniLLRepeat;
-		// miniLLRepeat = h5element2element<USHORT>("miniLLRepeat", &rootGroup, H5::PredType::NATIVE_UINT16);
-		// rootGroup.close();
-
 	}
 	catch (...) {
 		return -1;
@@ -1624,62 +1588,64 @@ int APS::read_miniLL_startAddr(const FPGASELECT & fpga){
 	return FPGA::read_FPGA(handle_, FPGA_ADDR_CHA_MINILLSTART, fpga);
 }
 
-// int APS::save_state_file(string & stateFile){
+int APS::save_state_file(string & stateFile){
+	throw runtime_error("write_state_file not currently implemented");
+	// if (stateFile.length() == 0) {
+	// 	stateFile += "cache_" + deviceSerial_ + ".h5";
+	// }
 
-// 	if (stateFile.length() == 0) {
-// 		stateFile += "cache_" + deviceSerial_ + ".h5";
-// 	}
+	// FILE_LOG(logDEBUG) << "Writing State For Device: " << deviceSerial_ << " to hdf5 file: " << stateFile;
+	// H5::H5File H5StateFile(stateFile, H5F_ACC_TRUNC);
+	// string rootStr = "";
+	// write_state_to_file(H5StateFile, rootStr);
+	// //Close the file
+	// H5StateFile.close();
+	// return 0;
+}
 
-// 	FILE_LOG(logDEBUG) << "Writing State For Device: " << deviceSerial_ << " to hdf5 file: " << stateFile;
-// 	H5::H5File H5StateFile(stateFile, H5F_ACC_TRUNC);
-// 	string rootStr = "";
-// 	write_state_to_hdf5(H5StateFile, rootStr);
-// 	//Close the file
-// 	H5StateFile.close();
-// 	return 0;
-// }
+int APS::read_state_file(string & stateFile){
+	throw runtime_error("read_state_file not currently implemented");
+	// if (stateFile.length() == 0) {
+	// 	stateFile += "cache_" + deviceSerial_ + ".h5";
+	// }
 
-// int APS::read_state_file(string & stateFile){
+	// FILE_LOG(logDEBUG) << "Reading State For Device: " << deviceSerial_ << " from hdf5 file: " << stateFile;
+	// H5::H5File H5StateFile(stateFile, H5F_ACC_RDONLY);
+	// string rootStr = "";
+	// read_state_from_file(H5StateFile, rootStr);
+	// //Close the file
+	// H5StateFile.close();
+	// return 0;
+}
 
-// 	if (stateFile.length() == 0) {
-// 		stateFile += "cache_" + deviceSerial_ + ".h5";
-// 	}
+int APS::write_state_to_file(std::fstream & file, const string & rootStr){
+	throw runtime_error("write_state_to_file not currently implemented");
+	// std::ostringstream tmpStream;
+	// //For now assume 4 channel data
+	// for(int chanct=0; chanct<4; chanct++){
+	// 	tmpStream.str("");
+	// 	tmpStream << rootStr << "/chan_" << chanct+1;
+	// 	FILE_LOG(logDEBUG) << "Writing State For Channel " << chanct + 1 << " to hdf5 file";
+	// 	FILE_LOG(logDEBUG) << "Creating Group: " << tmpStream.str();
+	// 	H5::Group tmpGroup = H5StateFile.createGroup(tmpStream.str());
+	// 	tmpGroup.close();
+	// 	channels_[chanct].write_state_to_file(H5StateFile,tmpStream.str());
+	// }
+	// return 0;
+}
 
-// 	FILE_LOG(logDEBUG) << "Reading State For Device: " << deviceSerial_ << " from hdf5 file: " << stateFile;
-// 	H5::H5File H5StateFile(stateFile, H5F_ACC_RDONLY);
-// 	string rootStr = "";
-// 	read_state_from_hdf5(H5StateFile, rootStr);
-// 	//Close the file
-// 	H5StateFile.close();
-// 	return 0;
-// }
-
-// int APS::write_state_to_hdf5(H5::H5File & H5StateFile, const string & rootStr){
-// 	std::ostringstream tmpStream;
-// 	//For now assume 4 channel data
-// 	for(int chanct=0; chanct<4; chanct++){
-// 		tmpStream.str("");
-// 		tmpStream << rootStr << "/chan_" << chanct+1;
-// 		FILE_LOG(logDEBUG) << "Writing State For Channel " << chanct + 1 << " to hdf5 file";
-// 		FILE_LOG(logDEBUG) << "Creating Group: " << tmpStream.str();
-// 		H5::Group tmpGroup = H5StateFile.createGroup(tmpStream.str());
-// 		tmpGroup.close();
-// 		channels_[chanct].write_state_to_hdf5(H5StateFile,tmpStream.str());
-// 	}
-// 	return 0;
-// }
-
-// int APS::read_state_from_hdf5(H5::H5File & H5StateFile, const string & rootStr){
-// 	//For now assume 4 channel data
-// 	std::ostringstream tmpStream;
-// 	for(int chanct=0; chanct<4; chanct++){
-// 		tmpStream.str("");
-// 		tmpStream << rootStr << "/chan_" << chanct+1;
-// 		FILE_LOG(logDEBUG) << "Reading State For Channel " << chanct + 1<< " from hdf5 file";
-// 		channels_[chanct].read_state_from_hdf5(H5StateFile,tmpStream.str());
-// 	}
-// 	return 0;
-// }
+int APS::read_state_from_file(std::fstream & file, const string & rootStr){
+	throw runtime_error("read_state_from_file not currently implemented");
+	// //For now assume 4 channel data
+	// std::ostringstream tmpStream;
+	// for(int chanct=0; chanct<4; chanct++){
+	// 	tmpStream.str("");
+	// 	tmpStream << rootStr << "/chan_" << chanct+1;
+	// 	FILE_LOG(logDEBUG) << "Reading State For Channel " << chanct + 1<< " from hdf5 file";
+	// 	channels_[chanct].read_state_from_file(H5StateFile,tmpStream.str());
+	// }
+	// return 0;
+}
 
 void BankBouncerThread::run(){
 	//Acquire the device lock

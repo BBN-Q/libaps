@@ -302,43 +302,45 @@ int APSRack::read_state_files(){
 }
 
 int APSRack::save_bulk_state_file(string & stateFile){
+	throw runtime_error("save_bulk_state_file not currently implemented");
+	// if (stateFile.length() == 0) {
+	// 	stateFile += "cache_APSRack.h5";
+	// }
 
-	if (stateFile.length() == 0) {
-		stateFile += "cache_APSRack.h5";
-	}
-
-	FILE_LOG(logDEBUG) << "Writing Bulk State File " << stateFile;
-	H5::H5File H5StateFile(stateFile, H5F_ACC_TRUNC);
-	// loop through available APS Units and save state
-	for(unsigned int  apsct = 0; apsct < APSs_.size(); apsct++) {
-		string rootStr = "/";
-		rootStr += APSs_[apsct].deviceSerial_ ;
-		FILE_LOG(logDEBUG) << "Creating Group: " << rootStr;
-		H5::Group tmpGroup = H5StateFile.createGroup(rootStr);
-		tmpGroup.close();
-		APSs_[apsct].write_state_to_hdf5(H5StateFile, rootStr);
-	}
-	//Close the file
-	H5StateFile.close();
-	return 0;
+	// FILE_LOG(logDEBUG) << "Writing Bulk State File " << stateFile;
+	// H5::H5File H5StateFile(stateFile, H5F_ACC_TRUNC);
+	// // loop through available APS Units and save state
+	// for(unsigned int  apsct = 0; apsct < APSs_.size(); apsct++) {
+	// 	string rootStr = "/";
+	// 	rootStr += APSs_[apsct].deviceSerial_ ;
+	// 	FILE_LOG(logDEBUG) << "Creating Group: " << rootStr;
+	// 	H5::Group tmpGroup = H5StateFile.createGroup(rootStr);
+	// 	tmpGroup.close();
+	// 	APSs_[apsct].write_state_to_file(H5StateFile, rootStr);
+	// }
+	// //Close the file
+	// H5StateFile.close();
+	// return 0;
 }
 
 int APSRack::read_bulk_state_file(string & stateFile){
-	if (stateFile.length() == 0) {
-		stateFile += "cache_APSRack.h5";
-	}
-	FILE_LOG(logDEBUG) << "Reading Bulk State File " << stateFile;
-	H5::H5File H5StateFile(stateFile, H5F_ACC_RDONLY);
+	throw runtime_error("read_bulk_state_file not currently implemented");
 
-	// loop through available APS Units and load data
-	for(unsigned int  apsct = 0; apsct < APSs_.size(); apsct++) {
-		string rootStr = "/";
-		rootStr += "/" + APSs_[apsct].deviceSerial_;
-		APSs_[apsct].read_state_from_hdf5(H5StateFile, rootStr);
-	}
-	//Close the file
-	H5StateFile.close();
-	return 0;
+	// if (stateFile.length() == 0) {
+	// 	stateFile += "cache_APSRack.h5";
+	// }
+	// FILE_LOG(logDEBUG) << "Reading Bulk State File " << stateFile;
+	// H5::H5File H5StateFile(stateFile, H5F_ACC_RDONLY);
+
+	// // loop through available APS Units and load data
+	// for(unsigned int  apsct = 0; apsct < APSs_.size(); apsct++) {
+	// 	string rootStr = "/";
+	// 	rootStr += "/" + APSs_[apsct].deviceSerial_;
+	// 	APSs_[apsct].read_state_from_file(H5StateFile, rootStr);
+	// }
+	// //Close the file
+	// H5StateFile.close();
+	// return 0;
 }
 
 int APSRack::raw_write(int deviceID, int numBytes, UCHAR* data){

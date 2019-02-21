@@ -105,22 +105,22 @@ int Channel::clear_data() {
 	return 0;
 }
 
-int Channel::write_state_to_hdf5(H5::H5File & H5StateFile, const string & rootStr){
+int Channel::write_state_to_file(std::fstream &file){
+	throw runtime_error("write_state_to_file not implemented");
+	// // write waveform data
+	// FILE_LOG(logDEBUG) << "Writing Waveform: " << rootStr + "/waveformLib";
+	// vector2h5array<float>(waveform_,  &H5StateFile, rootStr + "/waveformLib", rootStr + "/waveformLib",   H5::PredType::NATIVE_FLOAT);
 
-	// write waveform data
-	FILE_LOG(logDEBUG) << "Writing Waveform: " << rootStr + "/waveformLib";
-	vector2h5array<float>(waveform_,  &H5StateFile, rootStr + "/waveformLib", rootStr + "/waveformLib",   H5::PredType::NATIVE_FLOAT);
 
+	// // add channel state information to root group
+	// H5::Group tmpGroup = H5StateFile.openGroup(rootStr);
 
-	// add channel state information to root group
-	H5::Group tmpGroup = H5StateFile.openGroup(rootStr);
+	// element2h5attribute<float>("offset",  offset_,    &tmpGroup, H5::PredType::NATIVE_FLOAT);
+	// element2h5attribute<float>("scale",   scale_,     &tmpGroup, H5::PredType::NATIVE_FLOAT);
+	// element2h5attribute<bool>("enabled",  enabled_,   &tmpGroup, H5::PredType::NATIVE_UINT);
+	// element2h5attribute<int>("trigDelay", trigDelay_, &tmpGroup, H5::PredType::NATIVE_INT);
 
-	element2h5attribute<float>("offset",  offset_,    &tmpGroup, H5::PredType::NATIVE_FLOAT);
-	element2h5attribute<float>("scale",   scale_,     &tmpGroup, H5::PredType::NATIVE_FLOAT);
-	element2h5attribute<bool>("enabled",  enabled_,   &tmpGroup, H5::PredType::NATIVE_UINT);
-	element2h5attribute<int>("trigDelay", trigDelay_, &tmpGroup, H5::PredType::NATIVE_INT);
-
-	tmpGroup.close();
+	// tmpGroup.close();
 
 	//Save the linklist data
 
@@ -140,39 +140,40 @@ int Channel::write_state_to_hdf5(H5::H5File & H5StateFile, const string & rootSt
 //		tmpStream.str("");
 //		tmpStream << rootStr << "/linkListData/bank" << bankct+1 ;
 //		FILE_LOG(logDEBUG) << "Writing State Bank: " << bankct+1 << " from hdf5";
-//		banks_[bankct].write_state_to_hdf5(H5StateFile, tmpStream.str() );
+//		banks_[bankct].write_state_to_file(H5StateFile, tmpStream.str() );
 //	}
-	return 0;
+	// return 0;
 }
 
-int Channel::read_state_from_hdf5(std::fstream &file, const string & rootStr){
-	clear_data();
-	// read waveform data
-	waveform_ = h5array2vector<float>(&H5StateFile, rootStr + "/waveformLib",   H5::PredType::NATIVE_INT16);
+int Channel::read_state_from_file(std::fstream &file){
+	throw runtime_error("read_state_from_file not implemented");
+// 	clear_data();
+// 	// read waveform data
+// 	waveform_ = h5array2vector<float>(&H5StateFile, rootStr + "/waveformLib",   H5::PredType::NATIVE_INT16);
 
-	// load state information
-	H5::Group tmpGroup = H5StateFile.openGroup(rootStr);
-	offset_    = h5element2element<float>("offset",&tmpGroup, H5::PredType::NATIVE_FLOAT);
-	scale_     = h5element2element<float>("scale",&tmpGroup, H5::PredType::NATIVE_FLOAT);
-	enabled_   = h5element2element<bool>("enabled",&tmpGroup, H5::PredType::NATIVE_UINT);
-	trigDelay_ = h5element2element<int>("trigDelay",&tmpGroup, H5::PredType::NATIVE_INT);
+// 	// load state information
+// 	H5::Group tmpGroup = H5StateFile.openGroup(rootStr);
+// 	offset_    = h5element2element<float>("offset",&tmpGroup, H5::PredType::NATIVE_FLOAT);
+// 	scale_     = h5element2element<float>("scale",&tmpGroup, H5::PredType::NATIVE_FLOAT);
+// 	enabled_   = h5element2element<bool>("enabled",&tmpGroup, H5::PredType::NATIVE_UINT);
+// 	trigDelay_ = h5element2element<int>("trigDelay",&tmpGroup, H5::PredType::NATIVE_INT);
 
-	//Load the linklist data
-	//First figure our how many banks there are from the attribute
-	tmpGroup = H5StateFile.openGroup(rootStr + "/linkListData");
-	USHORT numBanks;
-	numBanks = h5element2element<USHORT>("numBanks",&tmpGroup, H5::PredType::NATIVE_UINT16);
-  tmpGroup.close();
+// 	//Load the linklist data
+// 	//First figure our how many banks there are from the attribute
+// 	tmpGroup = H5StateFile.openGroup(rootStr + "/linkListData");
+// 	USHORT numBanks;
+// 	numBanks = h5element2element<USHORT>("numBanks",&tmpGroup, H5::PredType::NATIVE_UINT16);
+//   tmpGroup.close();
 
-	std::ostringstream tmpStream;
-	//Now loop over the number of banks found and add the bank
-	for (USHORT bankct=0; bankct<numBanks; bankct++){
-		LLBank bank;
-		tmpStream.str(rootStr);
-		tmpStream << "/linkListData/bank" << bankct+1;
-		FILE_LOG(logDEBUG) << "Reading State Bank: " << bankct+1 << " from hdf5";
-		bank.read_state_from_hdf5( H5StateFile, tmpStream.str());
-//		banks_.push_back(bank);
-	}
-	return 0;
+// 	std::ostringstream tmpStream;
+// 	//Now loop over the number of banks found and add the bank
+// 	for (USHORT bankct=0; bankct<numBanks; bankct++){
+// 		LLBank bank;
+// 		tmpStream.str(rootStr);
+// 		tmpStream << "/linkListData/bank" << bankct+1;
+// 		FILE_LOG(logDEBUG) << "Reading State Bank: " << bankct+1 << " from hdf5";
+// 		bank.read_state_from_file( H5StateFile, tmpStream.str());
+// //		banks_.push_back(bank);
+// 	}
+// 	return 0;
 }

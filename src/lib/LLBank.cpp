@@ -54,29 +54,30 @@ WordVec LLBank::get_packed_data(const size_t & startIdx, const size_t & stopIdx)
 	return vecOut;
 }
 
-// int LLBank::write_state_to_hdf5(H5::H5File & H5StateFile, const string & rootStr){
-// 	H5::Group chanGroup = H5StateFile.openGroup(rootStr);
-// 	H5::DataType dt = H5::PredType::NATIVE_UINT16;
-// 	USHORT tmpLength = static_cast<USHORT>(length);
-// 	element2h5attribute<USHORT>("length", tmpLength, &chanGroup, dt);
-// 	chanGroup.close();
-// 	vector2h5array<USHORT>(addr_,  &H5StateFile, "addr",  rootStr + "/addr",  dt);
-// 	vector2h5array<USHORT>(count_,   &H5StateFile, "count",   rootStr + "/count",   dt);
-// 	vector2h5array<USHORT>(repeat_,  &H5StateFile, "repeat",  rootStr + "/repeat",  dt);
-// 	vector2h5array<USHORT>(trigger1_, &H5StateFile, "trigger1", rootStr + "/trigger1", dt);
-// 	if (IQMode){
-// 		vector2h5array<USHORT>(trigger2_, &H5StateFile, "trigger2", rootStr + "/trigger2", dt);
-// 	}
-// 	return 0;
-// }
+int LLBank::write_state_to_file(std::fstream &file){
+	throw runtime_error("write_state_to_file not currently implemented.");
+	// H5::Group chanGroup = H5StateFile.openGroup(rootStr);
+	// H5::DataType dt = H5::PredType::NATIVE_UINT16;
+	// USHORT tmpLength = static_cast<USHORT>(length);
+	// element2h5attribute<USHORT>("length", tmpLength, &chanGroup, dt);
+	// chanGroup.close();
+	// vector2h5array<USHORT>(addr_,  &H5StateFile, "addr",  rootStr + "/addr",  dt);
+	// vector2h5array<USHORT>(count_,   &H5StateFile, "count",   rootStr + "/count",   dt);
+	// vector2h5array<USHORT>(repeat_,  &H5StateFile, "repeat",  rootStr + "/repeat",  dt);
+	// vector2h5array<USHORT>(trigger1_, &H5StateFile, "trigger1", rootStr + "/trigger1", dt);
+	// if (IQMode){
+	// 	vector2h5array<USHORT>(trigger2_, &H5StateFile, "trigger2", rootStr + "/trigger2", dt);
+	// }
+	// return 0;
+}
 
-int LLBank::read_state_from_hdf5(std::fstream &file, const string & rootStr){
+int LLBank::read_state_from_file(std::fstream &file){
 	uint64_t numKeys, numEntries;
 	char keyName[32];
 	file.read(reinterpret_cast<char *> (&numKeys), sizeof(uint64_t));
 	file.read(reinterpret_cast<char *> (&numEntries), sizeof(uint64_t));
 
-	std::map<std::string, WordVec*> vecForKeyName;
+	std::map<std::string, WordVec> vecForKeyName;
 	vecForKeyName["addr"] = addr_;
 	vecForKeyName["count"] = count_;
 	vecForKeyName["trigger1"] = trigger1_;
@@ -86,9 +87,9 @@ int LLBank::read_state_from_hdf5(std::fstream &file, const string & rootStr){
 		file.read(reinterpret_cast<char *> (&keyName), 32*sizeof(char));
 		string name_str(keyName);
 		name_str = name_str.substr(0, name_str.find("#")-1);
-		WordVec *vec = vecForKeyName[name_str];
-		vec->resize(numEntires);
-		file.read(reinterpret_cast<char *> (vec->data()), numEntries*sizeof(uint16_t));
+		// WordVec *vec = vecForKeyName[name_str];
+		vecForKeyName[name_str].resize(numEntries);
+		file.read(reinterpret_cast<char *> (vecForKeyName[name_str].data()), numEntries*sizeof(uint16_t));
 	}
 
 	// H5::Group chanGroup;
