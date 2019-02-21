@@ -17,7 +17,6 @@ APSRack::~APSRack()  {
 
 //Initialize the rack by polling for devices and serial numbers
 int APSRack::init() {
-
 	//Create the logger
 	FILE* pFile = fopen("libaps.log", "a");
 	Output2FILE::Stream() = pFile;
@@ -96,7 +95,7 @@ void APSRack::enumerate_devices() {
 
 // This will update enumerate of devices by matching serial numbers
 // If a device is missing it will be removed
-// New devices are added 
+// New devices are added
 // Old devices are left as is (moved in place to new vector)
 void APSRack::update_device_enumeration() {
 
@@ -109,13 +108,13 @@ void APSRack::update_device_enumeration() {
 
 	size_t devicect = 0;
 	for (string tmpSerial : newSerials) {
-		
+
 		// example test to see if FTDI thinks device is open
 		if (FTDI::isOpen(devicect)) {
 			FILE_LOG(logDEBUG) << "Device " << devicect << " [ " << tmpSerial << " ] is open";
 		}
 
-		// does the new serial number exist in the old list? 
+		// does the new serial number exist in the old list?
 		if ( serial2dev.count(tmpSerial) > 0) {
 			// move from old APSs_ vector to new
 			newAPS_.push_back(std::move(APSs_[serial2dev[tmpSerial]]));
