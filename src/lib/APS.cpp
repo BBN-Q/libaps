@@ -3,6 +3,8 @@
  *
  *  Created on: Jun 13, 2012
  *      Author: cryan
+ *  Stripping out HDF5 to use simple binary formate
+ *      Graham Rowlands Feb. 2019
  */
 
 #include "APS.h"
@@ -254,31 +256,30 @@ int APS::clear_channel_data() {
 
 int APS::load_sequence_file(const string & seqFile){
 	/*
-	 * Load a sequence file from an H5 file
+	 * Load a sequence file from an aps1 binary file
 	 */
-	//First open the file
 	try {
 		FILE_LOG(logINFO) << "Opening sequence file: " << seqFile;
 		// Read the header information
-	    char junk[100];
-	    bool channelDataFor[4] = {false, false, false, false};
-	    bool has_LLs[4] = {false, false, false, false};
-	    bool isIQMode[4] = {false, false, false, false};
-	    uint64_t buff_length;
-	    // uint16_t num_chans;
-	    bool miniLLRepeat;
+		char junk[100];
+		bool channelDataFor[4] = {false, false, false, false};
+		bool has_LLs[4] = {false, false, false, false};
+		bool isIQMode[4] = {false, false, false, false};
+		uint64_t buff_length;
+		bool miniLLRepeat;
 
-	    std::fstream file(seqFile, std::ios::binary | std::ios::in);
-			if( !file ) {
-				FILE_LOG(logINFO) << "Unable to open sequence file.";
-			}
-	    if( !file ) { throw runtime_error("Unable to open sequence file.");};
+		std::fstream file(seqFile, std::ios::binary | std::ios::in);
 
-	    file.read(junk, 8); // Don't need this info
-	    file.read(reinterpret_cast<char *> (&channelDataFor), 4*sizeof(bool));
-	    file.read(reinterpret_cast<char *> (&miniLLRepeat), sizeof(bool));
-			FILE_LOG(logINFO) << "Channel data for: " << channelDataFor[0] << channelDataFor[1] << channelDataFor[2] << channelDataFor[3];
-			FILE_LOG(logINFO) << "miniLLRepeat: " << miniLLRepeat;
+		if( !file ) {
+			FILE_LOG(logINFO) << "Unable to open sequence file.";
+			throw runtime_error("Unable to open sequence file.");
+		}
+
+		file.read(junk, 8); // Don't need this info
+		file.read(reinterpret_cast<char *> (&channelDataFor), 4*sizeof(bool));
+		file.read(reinterpret_cast<char *> (&miniLLRepeat), sizeof(bool));
+		FILE_LOG(logDEBUG1) << "Channel data for: " << channelDataFor[0] << channelDataFor[1] << channelDataFor[2] << channelDataFor[3];
+		FILE_LOG(logDEBUG1) << "miniLLRepeat: " << miniLLRepeat;
 		const vector<string> chanStrs = {"chan_1", "chan_2", "chan_3", "chan_4"};
 		//For now assume 4 channel data
 		//Reset the channel data
@@ -288,27 +289,24 @@ int APS::load_sequence_file(const string & seqFile){
 			//Load the waveform library first
 			string chanStr = chanStrs[chanct];
 			file.read(reinterpret_cast<char *> (&isIQMode[chanct]), sizeof(bool));
-			// vector<short> tmpVec = h5array2vector<short>(&H5SeqFile, chanStr + "/waveformLib", H5::PredType::NATIVE_INT16);
 			vector<short> tmpVec;
 			file.read(reinterpret_cast<char *> (&buff_length), sizeof(uint64_t));
 			tmpVec.resize(buff_length);
 			file.read(reinterpret_cast<char *> (tmpVec.data()), buff_length*sizeof(int16_t));
-			FILE_LOG(logINFO) << "Read wfm for channel: " << chanct << " with size " << buff_length;
+			FILE_LOG(logDEBUG1) << "Read wfm for channel: " << chanct << " with size " << buff_length;
 			set_waveform(chanct, tmpVec);
 		}
 		file.read(reinterpret_cast<char *> (&has_LLs[0]), sizeof(bool));
 		file.read(reinterpret_cast<char *> (&has_LLs[2]), sizeof(bool));
-		FILE_LOG(logINFO) << "LL data for chan1: " << has_LLs[0] << " chan3: " << has_LLs[2];
+		FILE_LOG(logDEBUG1) << "LL data for chan1: " << has_LLs[0] << " chan3: " << has_LLs[2];
 		for(int chanct=0; chanct<4; chanct++){
 			if (has_LLs[chanct]) {
 				if (isIQMode[chanct]) {
 					channels_[chanct].LLBank_.IQMode = true;
 					int status = channels_[chanct].LLBank_.read_state_from_file(file);
-					FILE_LOG(logINFO) << "Read LL data for channel " << chanct;
 					if (status != 0) return status;
 					//If the length is less than can fit on the chip then write it to the device
 					if (channels_[chanct].LLBank_.length < MAX_LL_LENGTH){
-						FILE_LOG(logINFO) << "Writing LL data to FPGA for channel " << chanct;
 						write_LL_data_IQ(dac2fpga(chanct), 0, 0, channels_[chanct].LLBank_.length, true );
 					}
 				} else {

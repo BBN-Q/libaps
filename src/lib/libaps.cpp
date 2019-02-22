@@ -103,7 +103,6 @@ int set_waveform_int(int deviceID, int channelNum, short* data, int numPts){
 
 int load_sequence_file(int deviceID, const char * seqFile){
 	try {
-		cout << "Loading sequence file in API\n";
 		return APSRack_.load_sequence_file(deviceID, string(seqFile));
 	} catch (...) {
 		return APS_UNKNOWN_ERROR;

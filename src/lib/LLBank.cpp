@@ -3,6 +3,8 @@
  *
  *  Created on: Jun 13, 2012
  *      Author: cryan
+ *  Stripping out HDF5 to use simple binary formate
+ *      Graham Rowlands Feb. 2019
  */
 
 #include "LLBank.h"
@@ -56,19 +58,6 @@ WordVec LLBank::get_packed_data(const size_t & startIdx, const size_t & stopIdx)
 
 int LLBank::write_state_to_file(std::fstream &file){
 	throw runtime_error("write_state_to_file not currently implemented.");
-	// H5::Group chanGroup = H5StateFile.openGroup(rootStr);
-	// H5::DataType dt = H5::PredType::NATIVE_UINT16;
-	// USHORT tmpLength = static_cast<USHORT>(length);
-	// element2h5attribute<USHORT>("length", tmpLength, &chanGroup, dt);
-	// chanGroup.close();
-	// vector2h5array<USHORT>(addr_,  &H5StateFile, "addr",  rootStr + "/addr",  dt);
-	// vector2h5array<USHORT>(count_,   &H5StateFile, "count",   rootStr + "/count",   dt);
-	// vector2h5array<USHORT>(repeat_,  &H5StateFile, "repeat",  rootStr + "/repeat",  dt);
-	// vector2h5array<USHORT>(trigger1_, &H5StateFile, "trigger1", rootStr + "/trigger1", dt);
-	// if (IQMode){
-	// 	vector2h5array<USHORT>(trigger2_, &H5StateFile, "trigger2", rootStr + "/trigger2", dt);
-	// }
-	// return 0;
 }
 
 int LLBank::read_state_from_file(std::fstream &file){
@@ -76,7 +65,7 @@ int LLBank::read_state_from_file(std::fstream &file){
 	char keyName[32];
 	file.read(reinterpret_cast<char *> (&numKeys), sizeof(uint64_t));
 	file.read(reinterpret_cast<char *> (&length), sizeof(uint64_t));
-	FILE_LOG(logINFO) << "LL keys: " << numKeys << " length: " << length;
+	FILE_LOG(logDEBUG1) << "LL keys: " << numKeys << " length: " << length;
 	std::map<std::string, WordVec *> vecForKeyName;
 	std::map<std::string, WordVec *>::iterator it;
 	vecForKeyName["addr"] = &addr_;
@@ -88,47 +77,17 @@ int LLBank::read_state_from_file(std::fstream &file){
 		file.read(reinterpret_cast<char *> (&keyName), 32*sizeof(char));
 		string name_str(keyName);
 		name_str = name_str.substr(0, name_str.find("#"));
-		FILE_LOG(logINFO) << "Read key: " << name_str;
+		FILE_LOG(logDEBUG1) << "Read key: " << name_str;
 		it = vecForKeyName.find(name_str);
 		if (it == vecForKeyName.end()) throw runtime_error("Found improper key!");
-		// WordVec *vec = vecForKeyName[name_str];
 		vecForKeyName[name_str]->resize(length);
 		file.read(reinterpret_cast<char *> (vecForKeyName[name_str]->data()), length*sizeof(uint16_t));
-		FILE_LOG(logINFO) << "Read into: " << vecForKeyName[name_str]->data();
-		if (name_str == "repeat") {
-			FILE_LOG(logINFO) << vecForKeyName[name_str]->data() << "," << repeat_.data();
-		}
 	}
-		//
-		// FILE_LOG(logINFO) << "Read data: First point" << addr_[0];
-	// H5::Group chanGroup;
-	// try {
-	// 	chanGroup = H5StateFile.openGroup(rootStr);
-	// } catch (H5::FileIException & e) {
-	// 	return -2;
-	// }
-	// H5::DataType dt = H5::PredType::NATIVE_UINT16;
-	// length = h5element2element<USHORT>("length", &chanGroup, dt);
-	// chanGroup.close();
-	// try {
-	// 	addr_  = h5array2vector<USHORT>(&H5StateFile, rootStr + "/addr",  dt);
-	// 	count_   = h5array2vector<USHORT>(&H5StateFile, rootStr + "/count",   dt);
-	// 	trigger1_ = h5array2vector<USHORT>(&H5StateFile, rootStr + "/trigger1", dt);
-	// 	repeat_  = h5array2vector<USHORT>(&H5StateFile, rootStr + "/repeat",  dt);
-	// 	if(IQMode){
-	// 		trigger2_ = h5array2vector<USHORT>(&H5StateFile, rootStr + "/trigger2", dt);
-	// 	}
-	// } catch (std::exception & e) {
-	// 	return -3;
-	// }
-
 	try {
 		init_data();
-		FILE_LOG(logINFO) << "Initialized Data";
 	} catch (std::exception & e) {
 		return -4;
 	}
-
 	return 0;
 }
 
@@ -136,18 +95,14 @@ void LLBank::init_data(){
 
 	//Sort out the length of the mini LL's and their start points
 	//Go through the LL entries and calculate lengths and start points of each miniLL
-	FILE_LOG(logINFO) << "In Init Data";
 	miniLLLengths.clear();
 	miniLLStartIdx.clear();
-	FILE_LOG(logINFO) << "Cleared";
 	const USHORT startMiniLLMask = (1 << 15);
 	const USHORT endMiniLLMask = (1 << 14);
 	size_t lengthCt = 0;
-	FILE_LOG(logINFO) << "Length is " << length;
 	for(size_t ct = 0; ct < length; ct++){
 		// flags are stored in repeat vector
 		USHORT curWord = repeat_[ct];
-		FILE_LOG(logINFO) << "Curword is " << curWord;
 		if (curWord & startMiniLLMask){
 			miniLLStartIdx.push_back(ct);
 			lengthCt = 0;
@@ -158,7 +113,6 @@ void LLBank::init_data(){
 		}
 	}
 	numMiniLLs = miniLLLengths.size();
-	FILE_LOG(logINFO) << "numMiniLLs " << miniLLLengths.size();
 	//Now pack the data for writing to the device
 	packedData_.clear();
 	size_t expectedLength = IQMode ? 5*length : 4*length;
