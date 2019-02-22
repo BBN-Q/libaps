@@ -58,7 +58,7 @@ int serial2ID(char * deviceSerial){
 	if ( !APSRack_.serial2dev.count(deviceSerial)) {
 		// serial number not in map of known devices
 		return -1;
-	} 
+	}
 
 	return APSRack_.serial2dev[string(deviceSerial)];
 }
@@ -103,6 +103,7 @@ int set_waveform_int(int deviceID, int channelNum, short* data, int numPts){
 
 int load_sequence_file(int deviceID, const char * seqFile){
 	try {
+		cout << "Loading sequence file in API\n";
 		return APSRack_.load_sequence_file(deviceID, string(seqFile));
 	} catch (...) {
 		return APS_UNKNOWN_ERROR;
@@ -259,4 +260,3 @@ int program_FPGA(int deviceID, char* bitFile, int chipSelect, int expectedVersio
 #ifdef __cplusplus
 }
 #endif
-

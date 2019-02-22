@@ -395,6 +395,7 @@ class APS(object):
             - ch: DAC channel (1-4).
             - filename: HDF5 file with waveform data.
         """
+        raise Exception("load_waveform_from_file needs to be updated to remove h5")
         with h5py.File(filename, 'r') as FID:
             self.loadWaveform(ch-1, FID['WFVec'].value)
 

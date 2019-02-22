@@ -72,26 +72,35 @@ int LLBank::write_state_to_file(std::fstream &file){
 }
 
 int LLBank::read_state_from_file(std::fstream &file){
-	uint64_t numKeys, numEntries;
+	uint64_t numKeys;
 	char keyName[32];
 	file.read(reinterpret_cast<char *> (&numKeys), sizeof(uint64_t));
-	file.read(reinterpret_cast<char *> (&numEntries), sizeof(uint64_t));
-
-	std::map<std::string, WordVec> vecForKeyName;
-	vecForKeyName["addr"] = addr_;
-	vecForKeyName["count"] = count_;
-	vecForKeyName["trigger1"] = trigger1_;
-	vecForKeyName["trigger2"] = trigger2_;
-
-	for(int keyct=0; keyct<numKeys; keyct++){
+	file.read(reinterpret_cast<char *> (&length), sizeof(uint64_t));
+	FILE_LOG(logINFO) << "LL keys: " << numKeys << " length: " << length;
+	std::map<std::string, WordVec *> vecForKeyName;
+	std::map<std::string, WordVec *>::iterator it;
+	vecForKeyName["addr"] = &addr_;
+	vecForKeyName["count"] = &count_;
+	vecForKeyName["trigger1"] = &trigger1_;
+	vecForKeyName["trigger2"] = &trigger2_;
+	vecForKeyName["repeat"] = &repeat_;
+	for(uint64_t keyct=0; keyct<numKeys; keyct++){
 		file.read(reinterpret_cast<char *> (&keyName), 32*sizeof(char));
 		string name_str(keyName);
-		name_str = name_str.substr(0, name_str.find("#")-1);
+		name_str = name_str.substr(0, name_str.find("#"));
+		FILE_LOG(logINFO) << "Read key: " << name_str;
+		it = vecForKeyName.find(name_str);
+		if (it == vecForKeyName.end()) throw runtime_error("Found improper key!");
 		// WordVec *vec = vecForKeyName[name_str];
-		vecForKeyName[name_str].resize(numEntries);
-		file.read(reinterpret_cast<char *> (vecForKeyName[name_str].data()), numEntries*sizeof(uint16_t));
+		vecForKeyName[name_str]->resize(length);
+		file.read(reinterpret_cast<char *> (vecForKeyName[name_str]->data()), length*sizeof(uint16_t));
+		FILE_LOG(logINFO) << "Read into: " << vecForKeyName[name_str]->data();
+		if (name_str == "repeat") {
+			FILE_LOG(logINFO) << vecForKeyName[name_str]->data() << "," << repeat_.data();
+		}
 	}
-
+		//
+		// FILE_LOG(logINFO) << "Read data: First point" << addr_[0];
 	// H5::Group chanGroup;
 	// try {
 	// 	chanGroup = H5StateFile.openGroup(rootStr);
@@ -115,10 +124,11 @@ int LLBank::read_state_from_file(std::fstream &file){
 
 	try {
 		init_data();
+		FILE_LOG(logINFO) << "Initialized Data";
 	} catch (std::exception & e) {
 		return -4;
 	}
-		
+
 	return 0;
 }
 
@@ -126,14 +136,18 @@ void LLBank::init_data(){
 
 	//Sort out the length of the mini LL's and their start points
 	//Go through the LL entries and calculate lengths and start points of each miniLL
+	FILE_LOG(logINFO) << "In Init Data";
 	miniLLLengths.clear();
 	miniLLStartIdx.clear();
+	FILE_LOG(logINFO) << "Cleared";
 	const USHORT startMiniLLMask = (1 << 15);
 	const USHORT endMiniLLMask = (1 << 14);
 	size_t lengthCt = 0;
+	FILE_LOG(logINFO) << "Length is " << length;
 	for(size_t ct = 0; ct < length; ct++){
 		// flags are stored in repeat vector
 		USHORT curWord = repeat_[ct];
+		FILE_LOG(logINFO) << "Curword is " << curWord;
 		if (curWord & startMiniLLMask){
 			miniLLStartIdx.push_back(ct);
 			lengthCt = 0;
@@ -144,7 +158,7 @@ void LLBank::init_data(){
 		}
 	}
 	numMiniLLs = miniLLLengths.size();
-
+	FILE_LOG(logINFO) << "numMiniLLs " << miniLLLengths.size();
 	//Now pack the data for writing to the device
 	packedData_.clear();
 	size_t expectedLength = IQMode ? 5*length : 4*length;
