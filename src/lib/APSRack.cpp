@@ -10,17 +10,8 @@
 APSRack::APSRack() : numDevices_{0} {
 }
 
-APSRack::~APSRack()  {
-	//Close the logging file so we don't leave it dangling
-	fclose(Output2FILE::Stream());
-}
-
 //Initialize the rack by polling for devices and serial numbers
 int APSRack::init() {
-	//Create the logger
-	FILE* pFile = fopen("libaps.log", "a");
-	Output2FILE::Stream() = pFile;
-
 	//Enumerate the serial numbers of the devices attached
 	enumerate_devices();
 
@@ -214,23 +205,6 @@ int APSRack::set_LL_data(const int & deviceID, const int & channelNum, const Wor
 int APSRack::get_running(const int & deviceID){
 	//TODO:
 //	return APSs_[deviceID].running_;
-	return 0;
-}
-
-int APSRack::set_log(FILE * pFile) {
-	if (pFile) {
-		//Close the current file
-		if(Output2FILE::Stream()) fclose(Output2FILE::Stream());
-		//Assign the new one
-		Output2FILE::Stream() = pFile;
-		return 1;
-	} else {
-		return 0;
-	}
-}
-
-int APSRack::set_logging_level(const int & logLevel){
-	FILELog::ReportingLevel() = TLogLevel(logLevel);
 	return 0;
 }
 
