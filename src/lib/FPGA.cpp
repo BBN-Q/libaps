@@ -755,7 +755,10 @@ int FPGA::set_bit(FT_HANDLE deviceHandle, const FPGASELECT & fpga, const int & a
 
 	FPGA::write_FPGA(deviceHandle, addr, currentState | mask, fpga);
 
-	if (FILELog::ReportingLevel() >= logDEBUG2) {
+  plog::Severity consoleSv = plog::get<CONSOLE_LOG>()->getMaxSeverity();
+  plog::Severity fileSv = plog::get<FILE_LOG>()->getMaxSeverity();
+
+	if ((consoleSv >= plog::debug) || (fileSv >= plog::debug)) {
 		// verify write
 		currentState = FPGA::check_cur_state(deviceHandle, fpga, addr);
 		if ((currentState & mask) == 0) {
