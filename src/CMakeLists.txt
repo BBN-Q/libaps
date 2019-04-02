@@ -16,7 +16,7 @@ PROJECT( libaps )
 set (CMAKE_CXX_STANDARD 11)
 
 set(APS_VERSION_MAJOR 1)
-set(APS_VERSION_MINOR 4)
+set(APS_VERSION_MINOR 5)
 set(APS_VERSION_PATCH 0)
 set(APS_VERSION_STRING ${APS_VERSION_MAJOR}.${APS_VERSION_MINOR}.${APS_VERSION_PATCH})
 
@@ -26,6 +26,7 @@ FIND_LIBRARY(FTDI_LIBRARY NAMES ftd2xx64 ftd2xx HINTS "../ftdi/")
 # Grab all the header files in the src directory
 INCLUDE_DIRECTORIES("./lib/")
 INCLUDE_DIRECTORIES("../ftdi/")
+INCLUDE_DIRECTORIES("../deps/plog/include")
 
 # Add flags for gcc and warnings
 if(MSVC)
