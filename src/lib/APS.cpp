@@ -1408,7 +1408,7 @@ int APS::write_waveform(const int & dac, const vector<short> & wfData) {
 	}
 
 	//Reset the checksums
-	if ((consolveSv >= plog::debug) || (fileSv >= plog::debug)) {
+	if ((consoleSv >= plog::debug) || (fileSv >= plog::debug)) {
 		reset_checksums(fpga);
 	}
 
@@ -1417,7 +1417,7 @@ int APS::write_waveform(const int & dac, const vector<short> & wfData) {
 	flush();
 
 	//Verify the checksums
-	if ((consolveSv >= plog::debug) || (fileSv >= plog::debug)) {
+	if ((consoleSv >= plog::debug) || (fileSv >= plog::debug)) {
 		if (!verify_checksums(fpga)){
 			LOG(plog::error) << "Checksums didn't match after writing waveform data";
 			return -2;
