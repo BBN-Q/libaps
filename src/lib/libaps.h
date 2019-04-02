@@ -22,8 +22,8 @@ extern "C" {
 enum APSErrorCode {
 	APS_OK,
 	APS_UNKNOWN_ERROR = -1,
-	APS_FILE_ERROR = -2
-  APS_LOG_ERROR = -2
+	APS_FILE_ERROR = -2,
+        APS_LOG_ERROR = -3
 };
 
 

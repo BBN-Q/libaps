@@ -21,7 +21,9 @@ set(APS_VERSION_PATCH 0)
 set(APS_VERSION_STRING ${APS_VERSION_MAJOR}.${APS_VERSION_MINOR}.${APS_VERSION_PATCH})
 
 # Look for FTDI
-FIND_LIBRARY(FTDI_LIBRARY NAMES ftd2xx64 ftd2xx HINTS "../ftdi/")
+#FIND_LIBRARY(FTDI_LIBRARY NAMES ftd2xx64 ftd2xx HINTS "../ftdi/")
+#message("Found FTDI library: " FTDI_LIBRARY)
+
 
 # Grab all the header files in the src directory
 INCLUDE_DIRECTORIES("./lib/")
@@ -49,7 +51,7 @@ SET ( DLL_SRC
 SET_SOURCE_FILES_PROPERTIES( ${DLL_SRC} PROPERTIES LANGUAGE CXX )
 
 ADD_LIBRARY( aps SHARED ${DLL_SRC} )
-TARGET_LINK_LIBRARIES(aps ${FTDI_LIBRARY})
+#TARGET_LINK_LIBRARIES(aps ${FTDI_LIBRARY})
 
 set_target_properties(aps PROPERTIES
 	VERSION ${APS_VERSION_STRING}
@@ -57,6 +59,8 @@ set_target_properties(aps PROPERTIES
 	PREFIX "lib" # force lib prefix even on Windows
 	MACOSX_RPATH 1
 )
+
+ADD_DEFINITIONS(-DVERSION="${APS_VERSION_STRING}")
 
 ADD_EXECUTABLE(run_tests
 	./lib/test.cpp

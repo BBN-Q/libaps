@@ -35,7 +35,7 @@ LoggerSetup::LoggerSetup() {
     throw;
   }
 
-  LOG(plog::info) << "libaps2 driver version: " << get_driver_version();
+  LOG(plog::info) << "libaps2 driver version: " << std::string(VERSION);
 }
 
 static LoggerSetup loggerSetup_;
