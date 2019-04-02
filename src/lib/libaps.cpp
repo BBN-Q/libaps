@@ -10,9 +10,6 @@
 #include <plog/Appenders/ColorConsoleAppender.h>
 #include "libaps.h"
 
-#define FILE_LOG 1
-#define CONSOLE_LOG 2
-
 // stub class to open loggers
 class LoggerSetup {
 public:

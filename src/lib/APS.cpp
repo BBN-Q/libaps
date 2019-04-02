@@ -1397,7 +1397,10 @@ int APS::write_waveform(const int & dac, const vector<short> & wfData) {
 	//Write the waveform parameters
 	FPGA::write_FPGA(handle_, sizeReg, wfLength, fpga);
 
-	if (FILELog::ReportingLevel() >= logDEBUG2) {
+  plog::Severity consoleSv = plog::get<CONSOLE_LOG>()->getMaxSeverity();
+  plog::Severity fileSv = plog::get<FILE_LOG>()->getMaxSeverity();
+
+	if ((consolveSv >= plog::debug) || (fileSv >= plog::debug)) {
 		//Double check it took
 		tmpData = FPGA::read_FPGA(handle_, sizeReg, fpga);
 		LOG(plog::debug) << "Size set to: " << tmpData;
@@ -1405,7 +1408,7 @@ int APS::write_waveform(const int & dac, const vector<short> & wfData) {
 	}
 
 	//Reset the checksums
-	if (FILELog::ReportingLevel() >= logDEBUG) {
+	if ((consolveSv >= plog::debug) || (fileSv >= plog::debug)) {
 		reset_checksums(fpga);
 	}
 
@@ -1414,7 +1417,7 @@ int APS::write_waveform(const int & dac, const vector<short> & wfData) {
 	flush();
 
 	//Verify the checksums
-	if (FILELog::ReportingLevel() >= logDEBUG) {
+	if ((consolveSv >= plog::debug) || (fileSv >= plog::debug)) {
 		if (!verify_checksums(fpga)){
 			LOG(plog::error) << "Checksums didn't match after writing waveform data";
 			return -2;

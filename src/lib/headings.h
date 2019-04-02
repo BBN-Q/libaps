@@ -37,6 +37,10 @@ using std::runtime_error;
 #include <utility>
 #include <chrono>
 
+//Logger IDs
+#define FILE_LOG 1
+#define CONSOLE_LOG 2
+
 //Deal with some Windows/Linux difference
 #ifdef _WIN32
 #include "windows.h"
