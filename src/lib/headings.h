@@ -66,7 +66,7 @@ inline void usleep(int waitTime) {
 
 #endif // _MSC_VER
 
-#include "logger.h"
+#include <plog/Log.h>
 
 //Simple structure for pairs of address/data checksums
 struct CheckSum {

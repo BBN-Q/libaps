@@ -55,7 +55,7 @@ string APSRack::get_deviceSerial(const int & deviceID) {
 	// if serial number is different re-enumerate
 	for(unsigned int cnt = 0; cnt < testSerials.size(); cnt++) {
 		if (testSerials[cnt].compare(deviceSerials_[cnt]) != 0) {
-			FILE_LOG(logDEBUG) << testSerials[cnt] << " does not match " << deviceSerials_[cnt] << " re-enumerating.";
+			LOG(plog::debug) << testSerials[cnt] << " does not match " << deviceSerials_[cnt] << " re-enumerating.";
 			update_device_enumeration();
 			break;
 		}
@@ -88,7 +88,7 @@ void APSRack::enumerate_devices() {
 	for (string tmpSerial : deviceSerials_) {
 		serial2dev[tmpSerial] = devicect;
 		APSs_.emplace_back(devicect, tmpSerial);
-		FILE_LOG(logDEBUG) << "Device " << devicect << " has serial number " << tmpSerial;
+		LOG(plog::debug) << "Device " << devicect << " has serial number " << tmpSerial;
 		devicect++;
 	}
 }
@@ -111,7 +111,7 @@ void APSRack::update_device_enumeration() {
 
 		// example test to see if FTDI thinks device is open
 		if (FTDI::isOpen(devicect)) {
-			FILE_LOG(logDEBUG) << "Device " << devicect << " [ " << tmpSerial << " ] is open";
+			LOG(plog::debug) << "Device " << devicect << " [ " << tmpSerial << " ] is open";
 		}
 
 		// does the new serial number exist in the old list?
@@ -119,11 +119,11 @@ void APSRack::update_device_enumeration() {
 			// move from old APSs_ vector to new
 			newAPS_.push_back(std::move(APSs_[serial2dev[tmpSerial]]));
 			newAPS_.back().deviceID_ = devicect;
-			FILE_LOG(logDEBUG) << "Old Device " << devicect << " [ " << tmpSerial << " ] moved";
+			LOG(plog::debug) << "Old Device " << devicect << " [ " << tmpSerial << " ] moved";
 		} else {
 			// does not exist so construct it in the new vector
 			newAPS_.emplace_back(devicect, tmpSerial);
-			FILE_LOG(logDEBUG) << "New Device " << devicect << " [ " << tmpSerial << " ]";
+			LOG(plog::debug) << "New Device " << devicect << " [ " << tmpSerial << " ]";
 		}
 
 		newSerial2dev[tmpSerial] = devicect;
@@ -306,13 +306,13 @@ int APSRack::save_bulk_state_file(string & stateFile){
 	// 	stateFile += "cache_APSRack.h5";
 	// }
 
-	// FILE_LOG(logDEBUG) << "Writing Bulk State File " << stateFile;
+	// LOG(plog::debug) << "Writing Bulk State File " << stateFile;
 	// H5::H5File H5StateFile(stateFile, H5F_ACC_TRUNC);
 	// // loop through available APS Units and save state
 	// for(unsigned int  apsct = 0; apsct < APSs_.size(); apsct++) {
 	// 	string rootStr = "/";
 	// 	rootStr += APSs_[apsct].deviceSerial_ ;
-	// 	FILE_LOG(logDEBUG) << "Creating Group: " << rootStr;
+	// 	LOG(plog::debug) << "Creating Group: " << rootStr;
 	// 	H5::Group tmpGroup = H5StateFile.createGroup(rootStr);
 	// 	tmpGroup.close();
 	// 	APSs_[apsct].write_state_to_file(H5StateFile, rootStr);
@@ -328,7 +328,7 @@ int APSRack::read_bulk_state_file(string & stateFile){
 	// if (stateFile.length() == 0) {
 	// 	stateFile += "cache_APSRack.h5";
 	// }
-	// FILE_LOG(logDEBUG) << "Reading Bulk State File " << stateFile;
+	// LOG(plog::debug) << "Reading Bulk State File " << stateFile;
 	// H5::H5File H5StateFile(stateFile, H5F_ACC_RDONLY);
 
 	// // loop through available APS Units and load data
@@ -360,7 +360,7 @@ int APSRack::raw_read(int deviceID, FPGASELECT fpga) {
 
 	//Look for the data
 	FT_Read(APSs_[deviceID].handle_, dataBuffer, 2, &bytesRead);
-	FILE_LOG(logDEBUG2) << "Read " << bytesRead << " bytes with value" << myhex << ((dataBuffer[0] << 8) | dataBuffer[1]);
+	LOG(plog::verbose) << "Read " << bytesRead << " bytes with value" << myhex << ((dataBuffer[0] << 8) | dataBuffer[1]);
 	return int((dataBuffer[0] << 8) | dataBuffer[1]);
 }
 

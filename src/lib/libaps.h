@@ -23,6 +23,7 @@ enum APSErrorCode {
 	APS_OK,
 	APS_UNKNOWN_ERROR = -1,
 	APS_FILE_ERROR = -2
+  APS_LOG_ERROR = -2
 };
 
 
@@ -76,8 +77,8 @@ EXPORT int stop(int);
 
 EXPORT int get_running(int);
 
-EXPORT int set_log(char *);
-EXPORT int set_logging_level(int);
+EXPORT int set_file_logging_level(const plog::Severity);
+EXPORT int set_console_logging_level(const plog::Severity);
 
 /* low-level debug methods */
 EXPORT int save_state_files();
