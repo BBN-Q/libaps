@@ -21,11 +21,11 @@ void FTDI::get_device_serials(vector<string> & deviceSerials) {
 	ftStatus = FT_CreateDeviceInfoList(&numDevices);
 
 	if(!FT_SUCCESS(ftStatus)) {
-		FILE_LOG(logERROR) << "Unable to run FT_CreateDeviceInfoList with error code " << static_cast<int>(ftStatus);
+		LOG(plog::error) << "Unable to run FT_CreateDeviceInfoList with error code " << static_cast<int>(ftStatus);
 		return;
 	}
 
-	FILE_LOG(logDEBUG) << "Found " << numDevices << " devices attached";
+	LOG(plog::debug) << "Found " << numDevices << " devices attached";
 
 	if (numDevices > 0) {
 		// allocate storage for list based on numDevs
@@ -34,23 +34,23 @@ void FTDI::get_device_serials(vector<string> & deviceSerials) {
 		ftStatus = FT_GetDeviceInfoList(devInfo,&numDevices);
 
 		if (!FT_SUCCESS(ftStatus)) {
-			FILE_LOG(logERROR) << "Unable to run FT_GetDeviceInfoList with error code " << static_cast<int>(ftStatus);
+			LOG(plog::error) << "Unable to run FT_GetDeviceInfoList with error code " << static_cast<int>(ftStatus);
 			return;
 		}
 
 		//Copy over the char buffers to the vector of strings
 		for(int devicect=0; (devicect < static_cast<int>(numDevices)) && (devicect<MAX_APS_DEVICES); devicect++){
-			FILE_LOG(logDEBUG2) << "Dev "<< devicect;
+			LOG(plog::debug) << "Dev "<< devicect;
 			bool isOpen = devInfo[devicect].Flags & 0x1;
-			FILE_LOG(logDEBUG2) << "\tFlags = " << myhex << devInfo[devicect].Flags << (isOpen ? " (open)" : " (closed)");
-			FILE_LOG(logDEBUG2) << "\tType = " << myhex << devInfo[devicect].Type;
-			FILE_LOG(logDEBUG2) << "\tID = " << myhex << devInfo[devicect].ID;
-			FILE_LOG(logDEBUG2) << "\tLocId = " << myhex << devInfo[devicect].LocId;
-			FILE_LOG(logDEBUG2) << "\tSerialNumber = " << devInfo[devicect].SerialNumber;
-			FILE_LOG(logDEBUG2) << "\tDescription = " << devInfo[devicect].Description;
-			FILE_LOG(logDEBUG2) << "\tftHandle = " << devInfo[devicect].ftHandle;
+			LOG(plog::debug) << "\tFlags = " << myhex << devInfo[devicect].Flags << (isOpen ? " (open)" : " (closed)");
+			LOG(plog::debug) << "\tType = " << myhex << devInfo[devicect].Type;
+			LOG(plog::debug) << "\tID = " << myhex << devInfo[devicect].ID;
+			LOG(plog::debug) << "\tLocId = " << myhex << devInfo[devicect].LocId;
+			LOG(plog::debug) << "\tSerialNumber = " << devInfo[devicect].SerialNumber;
+			LOG(plog::debug) << "\tDescription = " << devInfo[devicect].Description;
+			LOG(plog::debug) << "\tftHandle = " << devInfo[devicect].ftHandle;
 			deviceSerials.push_back(string(devInfo[devicect].SerialNumber));
-			FILE_LOG(logDEBUG) << "Added " << deviceSerials.back() << " to device list.";
+			LOG(plog::debug) << "Added " << deviceSerials.back() << " to device list.";
 		}
 
 		free(devInfo);
@@ -62,21 +62,21 @@ int FTDI::connect(const int & deviceID, FT_HANDLE & deviceHandle) {
 	FT_STATUS ftStatus;
 	ftStatus = FT_Open(deviceID, &deviceHandle);
 	if(!FT_SUCCESS(ftStatus)) {
-		FILE_LOG(logERROR) << "Unable to open connection to device " << deviceID;
-		FILE_LOG(logERROR) << "FT_STATUS is " << ftStatus;
+		LOG(plog::error) << "Unable to open connection to device " << deviceID;
+		LOG(plog::error) << "FT_STATUS is " << ftStatus;
 		return -1;
 	}
 	else{
-		FILE_LOG(logDEBUG2) << "Opened connection to " << deviceID;
+		LOG(plog::debug) << "Opened connection to " << deviceID;
 		ftStatus = FT_SetTimeouts(deviceHandle, APS_READTIMEOUT,APS_WRITETIMEOUT);
 		if(!FT_SUCCESS(ftStatus)) {
-			FILE_LOG(logERROR) << "Unable to set USB timeouts for device " << deviceID;
+			LOG(plog::error) << "Unable to set USB timeouts for device " << deviceID;
 			return -1;
 		}
 		//Since we are polling a few bytes at a time on the device we can shorten up the latency
 		ftStatus = FT_SetLatencyTimer(deviceHandle, 2);
 		if(!FT_SUCCESS(ftStatus)) {
-			FILE_LOG(logERROR) << "Unable to set latency for device " << deviceID;
+			LOG(plog::error) << "Unable to set latency for device " << deviceID;
 			return -1;
 		}
 	}
@@ -89,7 +89,7 @@ int FTDI::disconnect(FT_HANDLE & deviceHandle) {
 	FT_STATUS ftStatus;
 	ftStatus = FT_Close(deviceHandle);
 	if(!FT_SUCCESS(ftStatus)) {
-		FILE_LOG(logERROR) << "Unable to close device " << deviceHandle;
+		LOG(plog::error) << "Unable to close device " << deviceHandle;
 		return -1;
 	}
 	return 0;
@@ -115,7 +115,7 @@ int FTDI::isOpen(const int & deviceID) {
 	ftStatus = FT_CreateDeviceInfoList(&numDevices);
 
 	if(!FT_SUCCESS(ftStatus)) {
-		FILE_LOG(logERROR) << "Unable to run FT_CreateDeviceInfoList with error code " << static_cast<int>(ftStatus);
+		LOG(plog::error) << "Unable to run FT_CreateDeviceInfoList with error code " << static_cast<int>(ftStatus);
 		return -1;
 	}
 
@@ -123,7 +123,7 @@ int FTDI::isOpen(const int & deviceID) {
 
 		ftStatus = FT_GetDeviceInfoDetail(deviceID, &Flags, &Type, &ID, &LocId, SerialNumber, Description, &ftHandleTemp);
 		if (!FT_SUCCESS(ftStatus)) {
-			FILE_LOG(logERROR) << "Unable to run FT_GetDeviceInfoDetail with error code " << static_cast<int>(ftStatus);
+			LOG(plog::error) << "Unable to run FT_GetDeviceInfoDetail with error code " << static_cast<int>(ftStatus);
 			return -2;
 		}
 

@@ -213,7 +213,6 @@ void test::printHelp(){
 	cout << spacing << "-stream LL Streaming Test" << endl;
 	cout << spacing << "-bf Run Bulk State File Test" << endl;
 	cout << spacing << "-sf Run  State File Test" << endl;
-	cout << spacing << "-0  Redirect log to stdout" << endl;
 	cout << spacing << "-h  Print This Help Message" << endl;
 	cout << spacing << "-wf Program square wave" << endl;
 	cout << spacing << "-trig Get/Set trigger interval" << endl;
@@ -243,7 +242,8 @@ int main(int argc, char** argv) {
 
 	int err;
 
-	set_logging_level(logDEBUG1);
+  set_console_logging_level(plog::debug);
+  set_file_logging_level(plog::debug);
 
 	if (argc < 2 || cmdOptionExists(argv, argv + argc, "-h")) {
 		test::printHelp();
@@ -262,11 +262,6 @@ int main(int argc, char** argv) {
 
 	//Initialize the APSRack from the DLL
 	init();
-
-	if (cmdOptionExists(argv, argv + argc, "-0")) {
-		char s[] = "stdout";
-		set_log(s);
-	}
 
 	//Connect to device
 	connect_by_ID(device_id);

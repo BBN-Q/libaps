@@ -65,7 +65,7 @@ int LLBank::read_state_from_file(std::fstream &file){
 	char keyName[32];
 	file.read(reinterpret_cast<char *> (&numKeys), sizeof(uint64_t));
 	file.read(reinterpret_cast<char *> (&length), sizeof(uint64_t));
-	FILE_LOG(logDEBUG1) << "LL keys: " << numKeys << " length: " << length;
+	LOG(plog::debug) << "LL keys: " << numKeys << " length: " << length;
 	std::map<std::string, WordVec *> vecForKeyName;
 	std::map<std::string, WordVec *>::iterator it;
 	vecForKeyName["addr"] = &addr_;
@@ -77,7 +77,7 @@ int LLBank::read_state_from_file(std::fstream &file){
 		file.read(reinterpret_cast<char *> (&keyName), 32*sizeof(char));
 		string name_str(keyName);
 		name_str = name_str.substr(0, name_str.find("#"));
-		FILE_LOG(logDEBUG1) << "Read key: " << name_str;
+		LOG(plog::debug) << "Read key: " << name_str;
 		it = vecForKeyName.find(name_str);
 		if (it == vecForKeyName.end()) throw runtime_error("Found improper key!");
 		vecForKeyName[name_str]->resize(length);
