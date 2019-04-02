@@ -1400,7 +1400,7 @@ int APS::write_waveform(const int & dac, const vector<short> & wfData) {
   plog::Severity consoleSv = plog::get<CONSOLE_LOG>()->getMaxSeverity();
   plog::Severity fileSv = plog::get<FILE_LOG>()->getMaxSeverity();
 
-	if ((consolveSv >= plog::debug) || (fileSv >= plog::debug)) {
+	if ((consoleSv >= plog::debug) || (fileSv >= plog::debug)) {
 		//Double check it took
 		tmpData = FPGA::read_FPGA(handle_, sizeReg, fpga);
 		LOG(plog::debug) << "Size set to: " << tmpData;
