@@ -162,8 +162,8 @@ int set_file_logging_level(const plog::Severity severity){
   return 1;
 }
 
-int set_file_logging_level(const plog::Severity severity){
-  plog::get<FILE_LOG>()->setMaxSeverity(severity);
+int set_console_logging_level(const plog::Severity severity){
+  plog::get<CONSOLE_LOG>()->setMaxSeverity(severity);
   return 1;
 }
 

@@ -19,11 +19,31 @@ from ctypes.util import find_library
 import numpy.ctypeslib as npct
 import sys
 import os
+from enum import IntEnum
 
 import numpy as np
 import h5py
 
-APS_PY_WRAPPER_VERSION = 1.4
+#ctypes compatible Enum class to set logger severity according to plog values
+#https://www.chriskrycho.com/2015/ctypes-structures-and-dll-exports.html
+
+class PlogSeverity(IntEnum):
+    none = 0
+    fatal = 1
+    error = 2
+    warning = 3
+    info = 4
+    debug = 5
+    verbose = 6
+
+    def __init__(self, value):
+        self._as_parameter = int(value)
+
+    @classmethod
+    def from_param(cls, obj):
+        return int(obj)
+
+APS_PY_WRAPPER_VERSION = 1.5
 
 APS_ROOT = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath( __file__ )), '../../'))
 
@@ -50,6 +70,10 @@ libaps.set_channel_offset.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_float
 libaps.get_channel_offset.restype = ctypes.c_float
 libaps.set_trigger_interval.argtypes = [ctypes.c_int, ctypes.c_double]
 libaps.get_trigger_interval.restype = ctypes.c_double
+libaps.set_file_logging_level.argtype = [PlogSeverity]
+libaps.set_file_logging_level.restype = ctypes.c_int
+libaps.set_console_logging_level.argtype = [PlogSeverity]
+libaps.set_console_logging_level.restype = ctypes.c_int
 
 # initialize the library
 libaps.init()
@@ -60,6 +84,17 @@ DAC2_SERIALS = ('A6UQZB7Z', 'A6001nBU', 'A6001ixV', 'A6001nBT', 'A6001nBS')
 def is_dacii(serial):
     """Check if a given serial number is for a DACII, as these use different bitfiles."""
     return serial in DAC2_SERIALS
+
+def set_logging_level(file_log_level=PlogSeverity.info, console_log_level=PlogSeverity.warning):
+    if file_log_level:
+        if not isinstance(file_log_level, PlogSeverity):
+            raise TypeError(f"Unknown libaps file logging level: {file_log_level}.")
+        libaps.set_file_logging_level(file_log_level)
+
+    if console_log_level:
+        if not isinstance(console_log_level, PlogSeverity):
+            raise TypeError(f"Unknown libaps console logging level: {console_log_level}.")
+        libaps.set_console_logging_level(console_log_level)
 
 
 class APS(object):
@@ -423,14 +458,6 @@ class APS(object):
         self.triggerSource = settings['triggerSource']
         self.triggerInterval = settings['triggerInterval']
 
-    def set_log_level(self, level):
-        """Set libaps logging level.
-
-        Args:
-         -level: Logging level: (info = 2, debug = 3, debug1 = 4, debug2 = 5).
-        """
-        libaps.set_logging_level(level)
-
     def librarycall(self, functionName, *args):
         """Call a function from the C library.
         """
@@ -453,16 +480,16 @@ class APS(object):
         """
         return self.librarycall('read_register', fpga, address)
 
-def unit_test_basic(address, log_level=2):
+def unit_test_basic(address, console_log_level=PlogSeverity.info):
     """Basic test of APS functionality.
 
     Args:
         - address: APS unit to test.
-        - Log level: Optional log level.
+        - Log level: Optional log level for level.
     """
+    set_logging_level(file_log_level=None, console_log_level=console_log_level)
     aps = APS()
     aps.connect(address)
-    aps.set_log_level(log_level)
     print("Initializing...")
     aps.init(False)
     print("Current Bit File Version: ", aps.read_bitfile_version())
