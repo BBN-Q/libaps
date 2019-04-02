@@ -1,4 +1,4 @@
-LOG(plog::warning)/*
+/*
  * FPGA.cpp
  *
  *  Created on: Jun 26, 2012
