@@ -140,13 +140,10 @@ private:
 	int read_LL_addr(const int &);
 	int read_miniLL_startAddr(const FPGASELECT &);
 
-
-
-
 	int save_state_file(string &);
 	int read_state_file(string &);
-	int write_state_to_hdf5(  H5::H5File & , const string & );
-	int read_state_from_hdf5( H5::H5File & , const string & );
+	int write_state_to_file(std::fstream & , const string & );
+	int read_state_from_file(std::fstream & , const string & );
 };
 
 inline FPGASELECT dac2fpga(const int & dac)

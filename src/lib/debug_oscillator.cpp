@@ -11,9 +11,7 @@
 #include "libaps.h"
 
 void readStatusCtrl(int id) {
-	set_logging_level(logDEBUG2);
 	int status = read_status_ctrl(id);
-	set_logging_level(logDEBUG1);
 	cout << "Read status/control register: " << myhex << status << endl;
 }
 
@@ -59,7 +57,8 @@ int main(int argc, char** argv) {
 
 	int err;
 
-	set_logging_level(logDEBUG1);
+	set_console_logging_level(plog::debug);
+  set_file_logging_level(plog::debug);
 
 	if (argc < 2 || cmdOptionExists(argv, argv + argc, "-h")) {
 		printHelp();
@@ -75,9 +74,6 @@ int main(int argc, char** argv) {
 		cout << "Could not find APS serial " << serial << endl;
 		exit(-1);
 	}
-
-	char s[] = "stdout";
-	set_log(s);
 
 	//Connect to device
 	err = connect_by_ID(device_id);

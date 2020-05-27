@@ -57,7 +57,7 @@ int FPGA::program_FPGA(FT_HANDLE deviceHandle, vector<UCHAR> bitFileData, const 
 		RstMask |= APS_FRST23_BIT;
 	}
 
-	FILE_LOG(logDEBUG2) << "Starting to program FPGA Device from FPGA::program_FGPA with chipSelect = " << chipSelect;
+	LOG(plog::debug) << "Starting to program FPGA Device from FPGA::program_FGPA with chipSelect = " << chipSelect;
 
 	/*
 	 * Programming order:
@@ -76,20 +76,20 @@ int FPGA::program_FPGA(FT_HANDLE deviceHandle, vector<UCHAR> bitFileData, const 
 
 	//Steps 1 and 2
 	for(int ct = 0; ct < maxAttemptCnt && !ok; ct++) {
-		FILE_LOG(logDEBUG2) << "Attempt: "  << ct+1;
+		LOG(plog::debug) << "Attempt: "  << ct+1;
 		// Read the Status to get state of RESETN for unused channel
 		//TODO: is this necessary or used at all?
 		if(FPGA::read_register(deviceHandle, APS_CONF_STAT, 0, INVALID_FPGA, &readByte) != 1) return(-1);
-		FILE_LOG(logDEBUG2) << "Read 1: " << myhex << int(readByte);
+		LOG(plog::debug) << "Read 1: " << myhex << int(readByte);
 
 		// Clear Program and Reset Masks
 		writeByte = ~PgmMask & ~RstMask & 0xF;
-		FILE_LOG(logDEBUG2) << "Write 1: "  << myhex << int(writeByte);
+		LOG(plog::debug) << "Write 1: "  << myhex << int(writeByte);
 		if(FPGA::write_register(deviceHandle,  APS_CONF_STAT, 0, INVALID_FPGA, &writeByte) != 1) return(-2);
 
 		// Read the Status to see that INITN is asserted in response to PROGRAMN
 		if(FPGA::read_register(deviceHandle, APS_CONF_STAT, 0, INVALID_FPGA, &readByte) != 1) return(-3);
-		FILE_LOG(logDEBUG2) << "Read 2: " <<  myhex << int(readByte);
+		LOG(plog::debug) << "Read 2: " <<  myhex << int(readByte);
 
 		// verify Init bits are cleared
 		if((readByte & InitMask) == 0) ok = true;
@@ -98,11 +98,11 @@ int FPGA::program_FPGA(FT_HANDLE deviceHandle, vector<UCHAR> bitFileData, const 
 
 	//Steps 3 and 4
 	for(int ct = 0, ok = 0; ct < maxAttemptCnt && ok == 0; ct++) {
-		FILE_LOG(logDEBUG2) << "Attempt: "  << ct+1;
+		LOG(plog::debug) << "Attempt: "  << ct+1;
 
 		// Set *ALL* Program and Reset Bits
 		writeByte = (APS_PGM_BITS | APS_FRST_BITS) & 0xF;
-		FILE_LOG(logDEBUG2) << "Write 2: " << myhex << int(writeByte);
+		LOG(plog::debug) << "Write 2: " << myhex << int(writeByte);
 		if(FPGA::write_register(deviceHandle, APS_CONF_STAT, 0, INVALID_FPGA, &writeByte) != 1)return(-5);
 
 		// sleep to allow init to take place
@@ -111,7 +111,7 @@ int FPGA::program_FPGA(FT_HANDLE deviceHandle, vector<UCHAR> bitFileData, const 
 
 		// Read the Status to see that INITN is deasserted in response to PROGRAMN deassertion
 		if(FPGA::read_register(deviceHandle, APS_CONF_STAT, 0, INVALID_FPGA, &readByte) != 1) return(-6);
-		FILE_LOG(logDEBUG2) << "Read 3: "  << myhex << int(readByte);
+		LOG(plog::debug) << "Read 3: "  << myhex << int(readByte);
 
 		// verify Init Mask is high
 		if((readByte & InitMask) == InitMask) ok = 1;
@@ -153,15 +153,15 @@ int FPGA::program_FPGA(FT_HANDLE deviceHandle, vector<UCHAR> bitFileData, const 
 	ok = false;
 	for(int ct = 0; ct < maxAttemptCnt && !ok; ct++) {
 		if(FPGA::read_register(deviceHandle, APS_CONF_STAT, 1, INVALID_FPGA, &readByte) != 1) return(-3);
-		FILE_LOG(logDEBUG2) << "Read 4: " << myhex << int(readByte) << " (looking for " << int(DoneMask) << " HIGH)";
+		LOG(plog::debug) << "Read 4: " << myhex << int(readByte) << " (looking for " << int(DoneMask) << " HIGH)";
 		if ((readByte & DoneMask) == DoneMask) ok = true;
 		usleep(1000); // if done has not set wait a bit
 	}
 
-	if (!ok) {FILE_LOG(logWARNING) << "FPGAs did not set DONE bits after programming, attempting to continue.";}
+	if (!ok) {LOG(plog::warning) << "FPGAs did not set DONE bits after programming, attempting to continue.";}
 
 
-	FILE_LOG(logDEBUG) << "Done programming FPGA";
+	LOG(plog::debug) << "Done programming FPGA";
 
 	// wait 10ms for FPGA to deal with the bitfile data
 	usleep(10000);
@@ -174,7 +174,7 @@ int FPGA::program_FPGA(FT_HANDLE deviceHandle, vector<UCHAR> bitFileData, const 
 }
 
 int FPGA::reset(FT_HANDLE deviceHandle, const FPGASELECT & fpga) {
-	FILE_LOG(logDEBUG) << "Resetting FPGA " << fpga;
+	LOG(plog::debug) << "Resetting FPGA " << fpga;
 	UCHAR RstMask=0;
 	if((fpga == FPGA1) || (fpga == ALL_FPGAS)){
 		RstMask |= APS_FRST01_BIT;
@@ -182,7 +182,7 @@ int FPGA::reset(FT_HANDLE deviceHandle, const FPGASELECT & fpga) {
 	if((fpga == FPGA2) || (fpga == ALL_FPGAS)) {
 		RstMask |= APS_FRST23_BIT;
 	}
-	FILE_LOG(logDEBUG2) << "Reset mask " << myhex << RstMask;
+	LOG(plog::debug) << "Reset mask " << myhex << RstMask;
 	// Bring RESETN low to reset all registers and state machines
 	UCHAR writeByte = ~RstMask & 0xF;
 	if(FPGA::write_register(deviceHandle, APS_CONF_STAT, 0, INVALID_FPGA, &writeByte) != 1) return(-1);
@@ -211,10 +211,10 @@ int FPGA::read_register(
 	//Figure out how many bytes we're sending
 	switch (Command) {
 		case APS_FPGA_IO:
-			FILE_LOG(logERROR) << "FPGA::read_register can no longer be used with APS_FPGA_IO commands.";
+			LOG(plog::error) << "FPGA::read_register can no longer be used with APS_FPGA_IO commands.";
 			return -1;
 		case APS_FPGA_ADDR:
-			FILE_LOG(logERROR) << "FPGA::read_register can no longer be used with APS_FPGA_ADDR commands.";
+			LOG(plog::error) << "FPGA::read_register can no longer be used with APS_FPGA_ADDR commands.";
 			return -1;
 		case APS_CONF_STAT:
 		case APS_STATUS_CTRL:
@@ -231,11 +231,11 @@ int FPGA::read_register(
 	for (int repeats = 0; repeats < max_repeats; repeats++) {
 
 		//Write the commmand
-		if (repeats > 0) {FILE_LOG(logDEBUG2) << "Retry USB Write " << repeats;}
+		if (repeats > 0) {LOG(plog::debug) << "Retry USB Write " << repeats;}
 		ftStatus = FT_Write(deviceHandle, &commandPacket, 1, &bytesWritten);
 
 		if (!FT_SUCCESS(ftStatus) || bytesWritten != 1) {
-			FILE_LOG(logDEBUG2) << "FPGA::read_register: Error writing to USB with status = " << ftStatus << "; bytes written = " << bytesWritten << "; repeat count = " << repeats;
+			LOG(plog::debug) << "FPGA::read_register: Error writing to USB with status = " << ftStatus << "; bytes written = " << bytesWritten << "; repeat count = " << repeats;
 			continue;
 		}
 
@@ -243,16 +243,16 @@ int FPGA::read_register(
 
 		//Read the result
 		ftStatus = FT_Read(deviceHandle, Data, packetLength, &bytesRead);
-		if (repeats > 0) {FILE_LOG(logDEBUG2) << "Retry USB Read " << repeats;}
+		if (repeats > 0) {LOG(plog::debug) << "Retry USB Read " << repeats;}
 		if (!FT_SUCCESS(ftStatus) || bytesRead != packetLength) {
-			FILE_LOG(logDEBUG2) << "FPGA::read_register: Error reading from USB with status = " << ftStatus << "; bytes read = " << bytesRead << "; repeat count = " << repeats;
+			LOG(plog::debug) << "FPGA::read_register: Error reading from USB with status = " << ftStatus << "; bytes read = " << bytesRead << "; repeat count = " << repeats;
 		}
 		else{
 			break;
 		}
 	}
 	if (!FT_SUCCESS(ftStatus) || bytesRead != packetLength) {
-		FILE_LOG(logERROR) << "FPGA::read_register: Error reading to USB with status = " << ftStatus << "; bytes read = " << bytesRead;
+		LOG(plog::error) << "FPGA::read_register: Error reading to USB with status = " << ftStatus << "; bytes read = " << bytesRead;
 		return -1;
 	}
 
@@ -279,13 +279,13 @@ int FPGA::write_register(
 	switch(Command)
 	{
 	case APS_FPGA_IO:
-		FILE_LOG(logERROR) << "FPGA::write_register can no longer be used with APS_FPGA_IO commands.";
+		LOG(plog::error) << "FPGA::write_register can no longer be used with APS_FPGA_IO commands.";
 		return -1;
 	case APS_CONF_DATA:
 		packetLength = 61;
 		break;
 	case APS_FPGA_ADDR:
-		FILE_LOG(logERROR) << "FPGA::write_register can no longer be used with APS_FPGA_ADDR commands.";
+		LOG(plog::error) << "FPGA::write_register can no longer be used with APS_FPGA_ADDR commands.";
 		return -1;
 	case APS_CONF_STAT:
 	case APS_STATUS_CTRL:
@@ -306,13 +306,13 @@ int FPGA::write_register(
 	std::copy(Data, Data+packetLength, dataPacket.begin()+1);
 
 	for (repeats = 0; repeats < max_repeats; repeats++) {
-		if (repeats > 0) {FILE_LOG(logDEBUG2) << "Repeat Write " << repeats;}
+		if (repeats > 0) {LOG(plog::debug) << "Repeat Write " << repeats;}
 		ftStatus = FT_Write(deviceHandle, &dataPacket[0], packetLength+1, &bytesWritten);
 		if (FT_SUCCESS(ftStatus)) break;
 	}
 
 	if (!FT_SUCCESS(ftStatus) || bytesWritten != packetLength+1){
-		FILE_LOG(logERROR) << "FPGA::write_register: Error writing to USB status with status = " << ftStatus << "; bytes written = " << bytesWritten;
+		LOG(plog::error) << "FPGA::write_register: Error writing to USB status with status = " << ftStatus << "; bytes written = " << bytesWritten;
 	}
 
 	// Adjust for command byte when returning bytes written
@@ -335,7 +335,7 @@ USHORT FPGA::read_FPGA(FT_HANDLE deviceHandle, const ULONG & addr, FPGASELECT ch
 	FT_STATUS ftStatus;
 	ftStatus = FT_Write(deviceHandle, &commandPacket, 1, &bytesWritten);
 	if (!FT_SUCCESS(ftStatus) || bytesWritten != 1){
-		FILE_LOG(logDEBUG2) << "FPGA::read_register: Error writing to USB with status = " << ftStatus << "; bytes written = " << bytesWritten;
+		LOG(plog::debug) << "FPGA::read_register: Error writing to USB with status = " << ftStatus << "; bytes written = " << bytesWritten;
 	}
 
 	//Now read the data
@@ -346,12 +346,12 @@ USHORT FPGA::read_FPGA(FT_HANDLE deviceHandle, const ULONG & addr, FPGASELECT ch
 
 	ftStatus = FT_Read(deviceHandle, readData, 2, &bytesRead);
 	if (!FT_SUCCESS(ftStatus) || bytesRead != 2){
-		FILE_LOG(logDEBUG2) << "FPGA::read_register: Error reading from USB with status = " << ftStatus << "; bytes read = " << bytesRead;
+		LOG(plog::debug) << "FPGA::read_register: Error reading from USB with status = " << ftStatus << "; bytes read = " << bytesRead;
 	}
 
 	USHORT data = (readData[0] << 8) | readData[1];
 
-	FILE_LOG(logDEBUG2) << "Reading address " << myhex << addr << " with data " << data;
+	LOG(plog::debug) << "Reading address " << myhex << addr << " with data " << data;
 
 	return data;
 }
@@ -379,7 +379,7 @@ int FPGA::write_FPGA(FT_HANDLE deviceHandle, const unsigned int & addr, const ve
 	vector<UCHAR> dataPacket = format(fpga, addr, data);
 	vector<size_t> offsets = computeCmdByteOffsets(data.size());
 	if (data.size() > 0) {
-		FILE_LOG(logDEBUG2) << "Writing " << data.size() << " words at starting address: " << myhex << addr << " with Data[0]: " << data[0];
+		LOG(plog::debug) << "Writing " << data.size() << " words at starting address: " << myhex << addr << " with Data[0]: " << data[0];
 	}
 
 	//Write to device
@@ -638,7 +638,7 @@ int FPGA::write_SPI
 		dataPacket.push_back( (byteBuffer[ct/8]>>(7-(ct%8))) & 1 );
 
 	ftStatus = FT_Write(deviceHandle, &dataPacket[0], dataPacket.size(), &bytesWritten);
-	if (!FT_SUCCESS(ftStatus)) {FILE_LOG(logERROR) << "Write SPI command failed";}
+	if (!FT_SUCCESS(ftStatus)) {LOG(plog::error) << "Write SPI command failed";}
 
 	return bytesWritten;
 }
@@ -689,18 +689,18 @@ int FPGA::read_SPI
 
 	// Write the SPI command.  This stores the last 8 SPI read bits in the I/O FPGA SerData register
 	ftStatus = FT_Write(deviceHandle, &dataPacket[0], dataPacket.size(), &bytesWritten);
-	if (!FT_SUCCESS(ftStatus)) {FILE_LOG(logERROR) << "Write SPI command failed";}
+	if (!FT_SUCCESS(ftStatus)) {LOG(plog::error) << "Write SPI command failed";}
 
 	dataPacket[0] |= 0x80;  // Convert the Command Byte into a read
 
 	// Clock out data from SPI device with a dummy write to the same device
 	ftStatus = FT_Write(deviceHandle, &dataPacket[0], 1, &bytesWritten);
-	if (!FT_SUCCESS(ftStatus)) {FILE_LOG(logERROR) << "Write SPI command failed";}
+	if (!FT_SUCCESS(ftStatus)) {LOG(plog::error) << "Write SPI command failed";}
 
 
 	// Read the one byte of serial data from the SerData register
 	ftStatus = FT_Read(deviceHandle, Data, 1, &bytesRead);
-	if (!FT_SUCCESS(ftStatus)) {FILE_LOG(logERROR) << "Read SPI command failed";}
+	if (!FT_SUCCESS(ftStatus)) {LOG(plog::error) << "Read SPI command failed";}
 
 	return(bytesRead);
 
@@ -714,21 +714,24 @@ int FPGA::clear_bit(FT_HANDLE deviceHandle, const FPGASELECT & fpga, const int &
  *
  ********************************************************************/
 {
-	FILE_LOG(logDEBUG2) << "Clearing bit at address: " << myhex << addr;
+	LOG(plog::debug) << "Clearing bit at address: " << myhex << addr;
 
 	//Read the current state so we know how set the uncleared bits.
 	int currentState;
 
 	currentState = FPGA::check_cur_state(deviceHandle, fpga, addr);
-	FILE_LOG(logDEBUG2) << "Addr: " << myhex << addr << " Current State: " << currentState << " Writing: " << (currentState & ~mask);
+	LOG(plog::debug) << "Addr: " << myhex << addr << " Current State: " << currentState << " Writing: " << (currentState & ~mask);
 
 	FPGA::write_FPGA(deviceHandle, addr, currentState & ~mask, fpga);
 
-	if (FILELog::ReportingLevel() >= logDEBUG2) {
+  plog::Severity consoleSv = plog::get<CONSOLE_LOG>()->getMaxSeverity();
+  plog::Severity fileSv = plog::get<FILE_LOG>()->getMaxSeverity();
+
+	if ((consoleSv >= plog::debug) || (fileSv >= plog::debug)) {
 		// verify write
 		currentState = FPGA::check_cur_state(deviceHandle, fpga, addr);
 		if ((currentState & mask) != 0) {
-			FILE_LOG(logERROR) << "ERROR: FPGA::clear_bit checked data does not match set value";
+			LOG(plog::error) << "ERROR: FPGA::clear_bit checked data does not match set value";
 		}
 	}
 
@@ -748,15 +751,18 @@ int FPGA::set_bit(FT_HANDLE deviceHandle, const FPGASELECT & fpga, const int & a
 	int currentState;
 
 	currentState = FPGA::check_cur_state(deviceHandle, fpga, addr);
-	FILE_LOG(logDEBUG2) << "Addr: " <<  myhex << addr << " Current State: " << currentState << " Mask: " << mask << " Writing: " << (currentState | mask);
+	LOG(plog::debug) << "Addr: " <<  myhex << addr << " Current State: " << currentState << " Mask: " << mask << " Writing: " << (currentState | mask);
 
 	FPGA::write_FPGA(deviceHandle, addr, currentState | mask, fpga);
 
-	if (FILELog::ReportingLevel() >= logDEBUG2) {
+  plog::Severity consoleSv = plog::get<CONSOLE_LOG>()->getMaxSeverity();
+  plog::Severity fileSv = plog::get<FILE_LOG>()->getMaxSeverity();
+
+	if ((consoleSv >= plog::debug) || (fileSv >= plog::debug)) {
 		// verify write
 		currentState = FPGA::check_cur_state(deviceHandle, fpga, addr);
 		if ((currentState & mask) == 0) {
-			FILE_LOG(logERROR) << "ERROR: FPGA::set_bit checked data does not match set value";
+			LOG(plog::error) << "ERROR: FPGA::set_bit checked data does not match set value";
 		}
 	}
 
@@ -773,9 +779,8 @@ int FPGA::check_cur_state(FT_HANDLE deviceHandle, const FPGASELECT & fpga, const
 		currentState2 = FPGA::read_FPGA(deviceHandle, addr, FPGA2);
 		if (currentState != currentState2) {
 			// note the mismatch in the log file but continue on using FPGA1's data
-			FILE_LOG(logERROR) << "FPGA::check_cur_state: FPGA registers don't match. Addr: " << myhex << addr << " FPGA1: " << currentState << " FPGA2: " << currentState2;
+			LOG(plog::error) << "FPGA::check_cur_state: FPGA registers don't match. Addr: " << myhex << addr << " FPGA1: " << currentState << " FPGA2: " << currentState2;
 		}
 	}
 	return currentState;
 }
-

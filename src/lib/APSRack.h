@@ -14,7 +14,6 @@
 class APSRack {
 public:
 	APSRack();
-	~APSRack();
 
 	map<string, int> serial2dev;
 
@@ -58,9 +57,6 @@ public:
 	bool get_channel_enabled(const int &, const int &) const;
 
 	int get_running(const int &);
-
-	int set_log(FILE *);
-	int set_logging_level(const int &);
 
 	//Pass through both short and float waveforms
 	template <typename T>

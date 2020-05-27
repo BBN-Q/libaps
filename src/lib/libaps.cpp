@@ -7,8 +7,35 @@
  */
 
 #include "headings.h"
+#include <plog/Appenders/ColorConsoleAppender.h>
 #include "libaps.h"
 
+// stub class to open loggers
+class LoggerSetup {
+public:
+  LoggerSetup();
+};
+
+LoggerSetup::LoggerSetup() {
+  //TODO: change log file path
+  if (!plog::get()) {
+    static plog::RollingFileAppender<plog::TxtFormatter> fileAppender("libaps.log", 1000000, 3);
+    plog::init<FILE_LOG>(plog::info, &fileAppender);
+    static plog::ColorConsoleAppender<plog::TxtFormatter> consoleAppender;
+    plog::init<CONSOLE_LOG>(plog::warning, &consoleAppender);
+    plog::init(plog::verbose).addAppender(plog::get<FILE_LOG>()).addAppender(plog::get<CONSOLE_LOG>());
+  }
+
+  //make sure it was created correctly
+  if (!plog::get()){
+    std::cout << "Was unable to create a logger for libaps! Exiting..." << std::endl;
+    throw;
+  }
+
+  LOG(plog::info) << "libaps2 driver version: " << std::string(VERSION);
+}
+
+static LoggerSetup loggerSetup_;
 
 APSRack APSRack_;
 
@@ -58,7 +85,7 @@ int serial2ID(char * deviceSerial){
 	if ( !APSRack_.serial2dev.count(deviceSerial)) {
 		// serial number not in map of known devices
 		return -1;
-	} 
+	}
 
 	return APSRack_.serial2dev[string(deviceSerial)];
 }
@@ -127,29 +154,14 @@ int get_running(int deviceID){
 	return APSRack_.get_running(deviceID);
 }
 
-//Expects a null-terminated character array
-int set_log(char * fileNameArr) {
-
-	string fileName(fileNameArr);
-	if (fileName.compare("stdout") == 0){
-		return APSRack_.set_log(stdout);
-	}
-	else if (fileName.compare("stderr") == 0){
-		return APSRack_.set_log(stderr);
-	}
-	else{
-
-		FILE* pFile = fopen(fileName.c_str(), "a");
-		if (!pFile) {
-			return APS_FILE_ERROR;
-		}
-
-		return APSRack_.set_log(pFile);
-	}
+int set_file_logging_level(const plog::Severity severity){
+	plog::get<FILE_LOG>()->setMaxSeverity(severity);
+  return 1;
 }
 
-int set_logging_level(int logLevel){
-	return APSRack_.set_logging_level(logLevel);
+int set_console_logging_level(const plog::Severity severity){
+  plog::get<CONSOLE_LOG>()->setMaxSeverity(severity);
+  return 1;
 }
 
 int set_trigger_source(int deviceID, int triggerSource) {
@@ -259,4 +271,3 @@ int program_FPGA(int deviceID, char* bitFile, int chipSelect, int expectedVersio
 #ifdef __cplusplus
 }
 #endif
-

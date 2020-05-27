@@ -7,9 +7,6 @@
 # make
 #
 # On Mac/Linux you can skip the '-G "MSYS Makefiles" option'
-#
-# If your HDF5 install is in a non-standard location set the HDF5_ROOT
-# environment variable
 
 CMAKE_MINIMUM_REQUIRED(VERSION 3.1)
 
@@ -19,28 +16,9 @@ PROJECT( libaps )
 set (CMAKE_CXX_STANDARD 11)
 
 set(APS_VERSION_MAJOR 1)
-set(APS_VERSION_MINOR 4)
+set(APS_VERSION_MINOR 5)
 set(APS_VERSION_PATCH 0)
 set(APS_VERSION_STRING ${APS_VERSION_MAJOR}.${APS_VERSION_MINOR}.${APS_VERSION_PATCH})
-
-# Look for HDF5
-if(MSVC)
-    # look for HDF5 using the HDF5 provided hdf5-config.cmake
-    # only works on Windows for now because there both Anaconda and HDF5 provide hdf5-config.cmake
-    find_package (HDF5 COMPONENTS C CXX NO_MODULE REQUIRED static)
-    include_directories (${HDF5_INCLUDE_DIR})
-    set (HDF5_LINK_LIBS ${HDF5_CXX_STATIC_LIBRARY})
-else()
-    # otherwise fall back to CMake's built-in FindHDF5.cmake logic
-    find_package(HDF5 REQUIRED COMPONENTS C CXX)
-    include_directories( ${HDF5_INCLUDE_DIRS} )
-    set (HDF5_LINK_LIBS ${HDF5_CXX_LIBRARIES})
-    set (HDF5_INCLUDE_DIR ${HDF5_INCLUDE_DIRS})
-endif()
-
-if(HDF5_FOUND)
-    message("Found HDF5 version ${HDF5_VERSION} and libraries ${HDF5_LINK_LIBS} with headers in ${HDF5_INCLUDE_DIR}")
-endif()
 
 # Look for FTDI
 FIND_LIBRARY(FTDI_LIBRARY NAMES ftd2xx64 ftd2xx HINTS "../ftdi/")
@@ -48,6 +26,7 @@ FIND_LIBRARY(FTDI_LIBRARY NAMES ftd2xx64 ftd2xx HINTS "../ftdi/")
 # Grab all the header files in the src directory
 INCLUDE_DIRECTORIES("./lib/")
 INCLUDE_DIRECTORIES("../ftdi/")
+INCLUDE_DIRECTORIES("../deps/plog/include")
 
 # Add flags for gcc and warnings
 if(MSVC)
@@ -70,7 +49,7 @@ SET ( DLL_SRC
 SET_SOURCE_FILES_PROPERTIES( ${DLL_SRC} PROPERTIES LANGUAGE CXX )
 
 ADD_LIBRARY( aps SHARED ${DLL_SRC} )
-TARGET_LINK_LIBRARIES(aps ${HDF5_LINK_LIBS} ${FTDI_LIBRARY})
+TARGET_LINK_LIBRARIES(aps ${FTDI_LIBRARY})
 
 set_target_properties(aps PROPERTIES
 	VERSION ${APS_VERSION_STRING}
@@ -78,6 +57,8 @@ set_target_properties(aps PROPERTIES
 	PREFIX "lib" # force lib prefix even on Windows
 	MACOSX_RPATH 1
 )
+
+ADD_DEFINITIONS(-DVERSION="${APS_VERSION_STRING}")
 
 ADD_EXECUTABLE(run_tests
 	./lib/test.cpp
@@ -111,15 +92,9 @@ IF(UNIX AND NOT APPLE)
 	FIND_LIBRARY(LIBGCC NAMES libgcc_s.so.1 HINTS ${GCC_PATH}/../lib64)
 	FIND_LIBRARY(STDCPP NAMES libstdc++.so.6 HINTS ${GCC_PATH}/../lib64)
 	FILE(GLOB STDCPP_ALL ${STDCPP}*)
-	FIND_LIBRARY(HDF5LIB NAMES hdf5 HINTS ${HDF5_LIBRARY_DIRS})
-	FILE(GLOB HDF5LIB_ALL ${HDF5LIB}.*)
-	FIND_LIBRARY(HDF5CPPLIB NAMES hdf5_cpp HINTS ${HDF5_LIBRARY_DIRS})
-	FILE(GLOB HDF5CPPLIB_ALL ${HDF5CPPLIB}.*)
 	SET(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS
 		${LIBGCC}
-		${STDCPP_ALL}
-		${HDF5LIB_ALL}
-		${HDF5CPPLIB_ALL})
+		${STDCPP_ALL})
 ENDIF()
 
 IF(NOT ${CONDA_BUILD})

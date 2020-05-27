@@ -3,6 +3,8 @@
  *
  *  Created on: Jun 13, 2012
  *      Author: cryan
+ *  Stripping out HDF5 to use simple binary formate
+ *      Graham Rowlands Feb. 2019
  */
 
 #include "LLBank.h"
@@ -54,50 +56,38 @@ WordVec LLBank::get_packed_data(const size_t & startIdx, const size_t & stopIdx)
 	return vecOut;
 }
 
-int LLBank::write_state_to_hdf5(H5::H5File & H5StateFile, const string & rootStr){
-	H5::Group chanGroup = H5StateFile.openGroup(rootStr);
-	H5::DataType dt = H5::PredType::NATIVE_UINT16;
-	USHORT tmpLength = static_cast<USHORT>(length);
-	element2h5attribute<USHORT>("length", tmpLength, &chanGroup, dt);
-	chanGroup.close();
-	vector2h5array<USHORT>(addr_,  &H5StateFile, "addr",  rootStr + "/addr",  dt);
-	vector2h5array<USHORT>(count_,   &H5StateFile, "count",   rootStr + "/count",   dt);
-	vector2h5array<USHORT>(repeat_,  &H5StateFile, "repeat",  rootStr + "/repeat",  dt);
-	vector2h5array<USHORT>(trigger1_, &H5StateFile, "trigger1", rootStr + "/trigger1", dt);
-	if (IQMode){
-		vector2h5array<USHORT>(trigger2_, &H5StateFile, "trigger2", rootStr + "/trigger2", dt);
-	}
-	return 0;
+int LLBank::write_state_to_file(std::fstream &file){
+	throw runtime_error("write_state_to_file not currently implemented.");
 }
 
-int LLBank::read_state_from_hdf5(H5::H5File & H5StateFile, const string & rootStr){
-	H5::Group chanGroup;
-	try {
-		chanGroup = H5StateFile.openGroup(rootStr);
-	} catch (H5::FileIException & e) {
-		return -2;
+int LLBank::read_state_from_file(std::fstream &file){
+	uint64_t numKeys;
+	char keyName[32];
+	file.read(reinterpret_cast<char *> (&numKeys), sizeof(uint64_t));
+	file.read(reinterpret_cast<char *> (&length), sizeof(uint64_t));
+	LOG(plog::debug) << "LL keys: " << numKeys << " length: " << length;
+	std::map<std::string, WordVec *> vecForKeyName;
+	std::map<std::string, WordVec *>::iterator it;
+	vecForKeyName["addr"] = &addr_;
+	vecForKeyName["count"] = &count_;
+	vecForKeyName["trigger1"] = &trigger1_;
+	vecForKeyName["trigger2"] = &trigger2_;
+	vecForKeyName["repeat"] = &repeat_;
+	for(uint64_t keyct=0; keyct<numKeys; keyct++){
+		file.read(reinterpret_cast<char *> (&keyName), 32*sizeof(char));
+		string name_str(keyName);
+		name_str = name_str.substr(0, name_str.find("#"));
+		LOG(plog::debug) << "Read key: " << name_str;
+		it = vecForKeyName.find(name_str);
+		if (it == vecForKeyName.end()) throw runtime_error("Found improper key!");
+		vecForKeyName[name_str]->resize(length);
+		file.read(reinterpret_cast<char *> (vecForKeyName[name_str]->data()), length*sizeof(uint16_t));
 	}
-	H5::DataType dt = H5::PredType::NATIVE_UINT16;
-	length = h5element2element<USHORT>("length", &chanGroup, dt);
-	chanGroup.close();
-	try {
-		addr_  = h5array2vector<USHORT>(&H5StateFile, rootStr + "/addr",  dt);
-		count_   = h5array2vector<USHORT>(&H5StateFile, rootStr + "/count",   dt);
-		trigger1_ = h5array2vector<USHORT>(&H5StateFile, rootStr + "/trigger1", dt);
-		repeat_  = h5array2vector<USHORT>(&H5StateFile, rootStr + "/repeat",  dt);
-		if(IQMode){
-			trigger2_ = h5array2vector<USHORT>(&H5StateFile, rootStr + "/trigger2", dt);
-		}
-	} catch (std::exception & e) {
-		return -3;
-	}
-
 	try {
 		init_data();
 	} catch (std::exception & e) {
 		return -4;
 	}
-		
 	return 0;
 }
 
@@ -123,7 +113,6 @@ void LLBank::init_data(){
 		}
 	}
 	numMiniLLs = miniLLLengths.size();
-
 	//Now pack the data for writing to the device
 	packedData_.clear();
 	size_t expectedLength = IQMode ? 5*length : 4*length;

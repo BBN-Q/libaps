@@ -28,15 +28,15 @@ static const int APS_WRITETIMEOUT = 500;
 static const int APS_PGM01_BIT = 1;
 static const int APS_PGM23_BIT = 2;
 static const int APS_PGM_BITS = (APS_PGM01_BIT | APS_PGM23_BIT);
-                 
+
 static const int APS_FRST01_BIT = 0x4;
 static const int APS_FRST23_BIT = 0x8;
 static const int APS_FRST_BITS = (APS_FRST01_BIT | APS_FRST23_BIT);
-                 
+
 static const int APS_DONE01_BIT = 0x10;
 static const int APS_DONE23_BIT = 0x20;
 static const int APS_DONE_BITS = (APS_DONE01_BIT | APS_DONE23_BIT);
-                 
+
 static const int APS_INIT01_BIT = 0x40;
 static const int APS_INIT23_BIT = 0x80;
 static const int APS_INIT_BITS = (APS_INIT01_BIT | APS_INIT23_BIT);
