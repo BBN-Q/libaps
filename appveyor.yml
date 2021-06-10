@@ -1,0 +1,81 @@
+version: 1.2.{build}-{branch}
+skip_tags: true
+
+# Start builds on tags only (GitHub and BitBucket)
+skip_non_tags: false
+
+# Build worker image (VM template)
+environment:
+  matrix:
+    - generator: "MinGW Makefiles"
+      dialect: mingw-w64
+
+# scripts that are called at very beginning, before repo cloning
+init:
+  - git config --global core.autocrlf input
+
+# clone directory
+clone_folder: c:\projects\libaps
+
+matrix:
+  fast_finish: true     # set this flag to immediately finish build once one of the jobs fails.
+platform:
+  - x64
+configuration:
+  - Debug
+
+# scripts that run after cloning repository
+install:
+  # get dependencies
+  - git submodule update --init --recursive
+
+build: off
+
+# scripts to run before build
+before_build:
+  # Workaround for CMake not wanting sh.exe on PATH for MinGW
+  - set PATH=%PATH:C:\Program Files\Git\usr\bin;=%
+  - if "%dialect%"=="mingw-w64" set PATH=c:\msys64\mingw64\bin;%PATH%
+
+# scripts to run *after* solution is built and *before* automatic packaging occurs (web apps, NuGet packages, Azure Cloud Services)
+before_package:
+
+# scripts to run after build
+after_build:
+  - 7z a Release.zip c:\projects\libaps2\build\libaps.dll
+  - 7z a Release.zip c:\projects\libaps2\build\*.exe
+
+# to run your custom scripts instead of automatic MSBuild
+build_script:
+  # create build directory and call cmake
+  - md build
+  - cd build
+  - cmake -H. -G"%generator%" -DCMAKE_BUILD_TYPE=%configuration% ../src/
+  - if "%generator:~0,5%"=="MinGW" set CMAKE_BUILD_FLAGS=-- -j
+  - cmake --build . %CMAKE_BUILD_FLAGS%
+
+
+# artifacts configuration
+artifacts:
+
+  # pushing entire folder as a zip archive
+  # - path: 'build\*.dll'
+  #   name: build\Libray.zip
+  #   type: Auto
+  #
+  # - path: 'build\*.exe'
+  #   name: build\Utils.zip
+  #   type: Auto
+
+  - path: build\Release.zip
+    name: Release
+#
+#     # Deploy to GitHub Releases
+#   - provider: GitHub
+#     artifact: /.*\.nupkg/           # upload all NuGet packages to release assets
+#     draft: false
+#     prerelease: false
+#     on:
+#       branch: master                # release from master branch only
+#       appveyor_repo_tag: true       # deploy on tag push only
+#
